@@ -1,0 +1,19 @@
+# Secrets - never commit these
+.env
+backend/secrets/
+*.pem
+*.key
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.db
+
+# Node
+node_modules/
+dist/
+
+# Editor
+.vscode/
+.idea/

@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+psycopg2-binary
+passlib[bcrypt]
+bcrypt==4.0.1
+python-jose[cryptography]
+python-multipart
+pydantic-settings
+email-validator
+apscheduler
+joserfc
+httpx

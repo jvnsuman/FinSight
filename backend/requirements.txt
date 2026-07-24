@@ -12,3 +12,5 @@ email-validator
 apscheduler
 joserfc
 httpx
+pandas
+openpyxl

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Trash2, X, AlertTriangle } from 'lucide-react'
+import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Trash2, X, AlertTriangle, Upload, CheckCircle2 } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
 import { Card, ErrorBanner } from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -8,6 +8,7 @@ import { getTransactions, createTransaction, deleteTransaction } from '../api/tr
 import { getAccounts } from '../api/accountsApi'
 import { getCategories } from '../api/categoriesApi'
 import { getGoals, coverShortfall } from '../api/goalsApi'
+import { previewImport, commitImport } from '../api/importApi'
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount)
@@ -18,6 +19,242 @@ const TYPE_COLOR = {
   income: { bg: 'bg-mint-light', text: 'text-mint' },
   expense: { bg: 'bg-coral-light', text: 'text-coral' },
   transfer: { bg: 'bg-teal/10', text: 'text-teal' },
+}
+
+const CATEGORY_TYPE_FOR_TXN = { income: 'income', expense: 'expense' }
+
+function ImportModal({ accounts, categories, onClose, onImported }) {
+  const [step, setStep] = useState('upload') // 'upload' | 'preview' | 'done'
+  const [accountId, setAccountId] = useState(accounts[0]?.account_id || '')
+  const [file, setFile] = useState(null)
+  const [amountMode, setAmountMode] = useState('debit_credit') // 'single' | 'debit_credit'
+  const [mapping, setMapping] = useState({
+    date_column: 'Date',
+    description_column: 'Description',
+    amount_column: '',
+    debit_column: 'Withdrawal Amt',
+    credit_column: 'Deposit Amt',
+  })
+  const [preview, setPreview] = useState(null)
+  const [rows, setRows] = useState([]) // editable copy of parsed_rows, only non-error rows
+  const [included, setIncluded] = useState({}) // row_number -> boolean
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [commitResult, setCommitResult] = useState(null)
+
+  const handlePreview = async (e) => {
+    e.preventDefault()
+    if (!file) { setError('Choose a file first.'); return }
+    setError('')
+    setLoading(true)
+    try {
+      const finalMapping = amountMode === 'single'
+        ? { date_column: mapping.date_column, description_column: mapping.description_column, amount_column: mapping.amount_column }
+        : { date_column: mapping.date_column, description_column: mapping.description_column, debit_column: mapping.debit_column, credit_column: mapping.credit_column }
+
+      const res = await previewImport(Number(accountId), finalMapping, file)
+      setPreview(res.data)
+      const validRows = res.data.parsed_rows.filter((r) => !r.parse_error)
+      setRows(validRows.map((r) => ({
+        ...r,
+        category_id: r.suggested_category_id,
+        payment_mode: '',
+      })))
+      const initialIncluded = {}
+      validRows.forEach((r) => { initialIncluded[r.row_number] = !r.is_likely_duplicate })
+      setIncluded(initialIncluded)
+      setStep('preview')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not parse this file. Check your column names match the file exactly.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateRow = (rowNumber, field, value) => {
+    setRows(rows.map((r) => r.row_number === rowNumber ? { ...r, [field]: value } : r))
+  }
+
+  const handleCommit = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      const rowsToCommit = rows
+        .filter((r) => included[r.row_number])
+        .map((r) => ({
+          transaction_date: r.transaction_date,
+          description: r.description,
+          amount: r.amount,
+          transaction_type: r.transaction_type,
+          category_id: r.category_id || null,
+          payment_mode: r.payment_mode || undefined,
+        }))
+      if (rowsToCommit.length === 0) {
+        setError('Select at least one row to import.')
+        setLoading(false)
+        return
+      }
+      const res = await commitImport(Number(accountId), rowsToCommit)
+      setCommitResult(res.data)
+      setStep('done')
+      onImported()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not import these transactions.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const includedCount = Object.values(included).filter(Boolean).length
+
+  return (
+    <div className="fixed inset-0 bg-ink/40 flex items-center justify-center px-4 z-50">
+      <div className="bg-white rounded-xl shadow-soft w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-display text-lg font-semibold text-ink">Import transactions</h2>
+          <button onClick={onClose} className="text-ink-light hover:text-ink"><X size={20} /></button>
+        </div>
+
+        {step === 'upload' && (
+          <form onSubmit={handlePreview} className="space-y-4">
+            <p className="text-xs text-ink-light">
+              Upload a CSV or Excel export from your bank. Nothing is saved until you review and confirm the preview.
+            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">Import into account</label>
+              <select
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal"
+              >
+                {accounts.map((a) => <option key={a.account_id} value={a.account_id}>{a.account_name}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">File</label>
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => setFile(e.target.files[0])}
+                className="w-full text-sm text-ink-light file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-teal/10 file:text-teal file:text-sm file:font-medium"
+              />
+            </div>
+
+            <div className="border-t border-slate-100 pt-4">
+              <p className="text-xs font-medium text-ink mb-2">Column mapping — must match your file's header row exactly</p>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <Input label="Date column" value={mapping.date_column} onChange={(e) => setMapping({ ...mapping, date_column: e.target.value })} required />
+                <Input label="Description column" value={mapping.description_column} onChange={(e) => setMapping({ ...mapping, description_column: e.target.value })} required />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <button type="button" onClick={() => setAmountMode('debit_credit')}
+                  className={`py-2 rounded-lg text-xs font-medium border ${amountMode === 'debit_credit' ? 'bg-teal text-white border-teal' : 'bg-white text-ink-light border-slate-200'}`}>
+                  Separate debit/credit columns
+                </button>
+                <button type="button" onClick={() => setAmountMode('single')}
+                  className={`py-2 rounded-lg text-xs font-medium border ${amountMode === 'single' ? 'bg-teal text-white border-teal' : 'bg-white text-ink-light border-slate-200'}`}>
+                  Single signed amount column
+                </button>
+              </div>
+
+              {amountMode === 'debit_credit' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <Input label="Withdrawal/debit column" value={mapping.debit_column} onChange={(e) => setMapping({ ...mapping, debit_column: e.target.value })} required />
+                  <Input label="Deposit/credit column" value={mapping.credit_column} onChange={(e) => setMapping({ ...mapping, credit_column: e.target.value })} required />
+                </div>
+              ) : (
+                <Input label="Amount column (negative = expense)" value={mapping.amount_column} onChange={(e) => setMapping({ ...mapping, amount_column: e.target.value })} required />
+              )}
+            </div>
+
+            <ErrorBanner message={error} />
+            <div className="flex gap-3 pt-1">
+              <Button variant="secondary" onClick={onClose} fullWidth type="button">Cancel</Button>
+              <Button type="submit" fullWidth disabled={loading}>{loading ? 'Parsing...' : 'Preview import'}</Button>
+            </div>
+          </form>
+        )}
+
+        {step === 'preview' && preview && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 text-xs text-ink-light">
+              <span>{preview.total_rows} rows found</span>
+              {preview.rows_with_errors > 0 && <span className="text-coral">{preview.rows_with_errors} could not be parsed (excluded)</span>}
+              {preview.likely_duplicates > 0 && <span className="text-coral">{preview.likely_duplicates} look like duplicates (unchecked by default)</span>}
+            </div>
+
+            <div className="border border-slate-100 rounded-lg overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-surface text-left text-ink-light">
+                    <th className="px-2 py-2 w-8"></th>
+                    <th className="px-2 py-2">Date</th>
+                    <th className="px-2 py-2">Description</th>
+                    <th className="px-2 py-2 text-right">Amount</th>
+                    <th className="px-2 py-2">Type</th>
+                    <th className="px-2 py-2">Category</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.row_number} className={`border-t border-slate-50 ${row.is_likely_duplicate ? 'bg-coral/5' : ''}`}>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="checkbox"
+                          checked={!!included[row.row_number]}
+                          onChange={(e) => setIncluded({ ...included, [row.row_number]: e.target.checked })}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 text-ink whitespace-nowrap">{row.transaction_date}</td>
+                      <td className="px-2 py-1.5 text-ink max-w-[140px] truncate">
+                        {row.description}
+                        {row.is_likely_duplicate && <span className="text-coral ml-1">(dup?)</span>}
+                      </td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-ink">{formatCurrency(row.amount)}</td>
+                      <td className="px-2 py-1.5">
+                        <span className={row.transaction_type === 'income' ? 'text-mint' : 'text-coral'}>{row.transaction_type}</span>
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <select
+                          value={row.category_id || ''}
+                          onChange={(e) => updateRow(row.row_number, 'category_id', e.target.value ? Number(e.target.value) : null)}
+                          className="text-xs border border-slate-200 rounded px-1 py-0.5 w-full"
+                        >
+                          <option value="">—</option>
+                          {categories.filter((c) => c.category_type === row.transaction_type).map((c) => (
+                            <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs text-ink-light">{includedCount} row{includedCount !== 1 ? 's' : ''} selected to import.</p>
+
+            <ErrorBanner message={error} />
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => setStep('upload')} fullWidth type="button">Back</Button>
+              <Button onClick={handleCommit} fullWidth disabled={loading}>{loading ? 'Importing...' : `Import ${includedCount} transaction${includedCount !== 1 ? 's' : ''}`}</Button>
+            </div>
+          </div>
+        )}
+
+        {step === 'done' && commitResult && (
+          <div className="space-y-4 text-center py-4">
+            <CheckCircle2 size={32} className="text-mint mx-auto" />
+            <p className="text-sm text-ink">Imported {commitResult.created_count} transaction{commitResult.created_count !== 1 ? 's' : ''} successfully.</p>
+            <Button onClick={onClose} fullWidth>Done</Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function ShortfallWarningModal({ warning, onClose, onResolved }) {
@@ -128,14 +365,14 @@ function ShortfallWarningModal({ warning, onClose, onResolved }) {
   )
 }
 
-function TransactionFormModal({ accounts, categories, onClose, onCreated }) {
+function TransactionFormModal({ accounts, categories, onClose, onCreated, template }) {
   const [form, setForm] = useState({
-    account_id: accounts[0]?.account_id || '',
-    category_id: '',
-    transaction_type: 'expense',
-    amount: '',
-    description: '',
-    payment_mode: 'UPI',
+    account_id: template?.account_id || accounts[0]?.account_id || '',
+    category_id: template?.category_id || '',
+    transaction_type: template?.transaction_type || 'expense',
+    amount: template?.amount ?? '',
+    description: template?.description || '',
+    payment_mode: template?.payment_mode || 'UPI',
     transaction_date: new Date().toISOString().slice(0, 10),
   })
   const [error, setError] = useState('')
@@ -283,7 +520,9 @@ export default function Transactions() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [typeFilter, setTypeFilter] = useState('')
+  const [quickAddTemplate, setQuickAddTemplate] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -313,9 +552,14 @@ export default function Transactions() {
           <h1 className="font-display text-2xl font-semibold text-ink">Transactions</h1>
           <p className="text-sm text-ink-light mt-0.5">Every rupee, tracked.</p>
         </div>
-        <Button onClick={() => setShowModal(true)} disabled={accounts.length === 0}>
-          <Plus size={16} /> Add transaction
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setShowImportModal(true)} disabled={accounts.length === 0}>
+            <Upload size={16} /> Import
+          </Button>
+          <Button onClick={() => setShowModal(true)} disabled={accounts.length === 0}>
+            <Plus size={16} /> Add transaction
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-5">
@@ -333,6 +577,45 @@ export default function Transactions() {
           </button>
         ))}
       </div>
+
+      {!loading && transactions.length > 0 && (() => {
+        // Dedupe by description (case-insensitive), keep the most recent
+        // occurrence of each, cap at 6 - these are one-tap starting points
+        // for a transaction you log often (e.g. "Grocery Shopping").
+        const seen = new Set()
+        const quickOptions = []
+        for (const t of transactions) {
+          const key = (t.description || '').trim().toLowerCase()
+          if (!key || seen.has(key) || t.transaction_type === 'transfer') continue
+          seen.add(key)
+          quickOptions.push(t)
+          if (quickOptions.length === 6) break
+        }
+        if (quickOptions.length === 0) return null
+        return (
+          <div className="mb-6">
+            <p className="text-xs font-medium text-ink-light mb-2">Quick add</p>
+            <div className="flex flex-wrap gap-2">
+              {quickOptions.map((t) => (
+                <button
+                  key={t.transaction_id}
+                  onClick={() => setQuickAddTemplate({
+                    account_id: t.account_id,
+                    category_id: t.category?.category_id || '',
+                    transaction_type: t.transaction_type,
+                    amount: t.amount,
+                    description: t.description,
+                    payment_mode: t.payment_mode,
+                  })}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-surface text-ink border border-slate-200 hover:border-teal hover:text-teal transition-colors"
+                >
+                  {t.description} · {formatCurrency(t.amount)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {accounts.length === 0 && !loading && (
         <Card className="p-6 mb-5 text-sm text-ink-light">
@@ -386,12 +669,22 @@ export default function Transactions() {
         )}
       </Card>
 
-      {showModal && (
+      {(showModal || quickAddTemplate) && (
         <TransactionFormModal
           accounts={accounts}
           categories={categories}
-          onClose={() => setShowModal(false)}
+          template={quickAddTemplate}
+          onClose={() => { setShowModal(false); setQuickAddTemplate(null) }}
           onCreated={load}
+        />
+      )}
+
+      {showImportModal && (
+        <ImportModal
+          accounts={accounts}
+          categories={categories}
+          onClose={() => setShowImportModal(false)}
+          onImported={load}
         />
       )}
     </AppShell>

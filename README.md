@@ -19,6 +19,7 @@ FinSight is organized into two milestones, each broken into parts:
 | 2 | Expense, Accounts & Transactions | ✅ Active |
 | 3 | Budget Monitoring | ✅ Active |
 | 4 | Financial Dashboard | ✅ Active |
+| Extra | Bank Statement Import (CSV/Excel) | ✅ Active |
 
 **Milestone 2 - Investing & Goals**
 | Part | Feature | Status |
@@ -35,6 +36,7 @@ FinSight is organized into two milestones, each broken into parts:
 
 - **Authentication** - registration with email verification, JWT login, forgot/reset password, profile management, password change
 - **Accounts, Categories & Transactions** - full CRUD for financial accounts, custom categories, and transaction logging
+- **Bank Statement Import** - upload a CSV/Excel statement, map columns to transaction fields, preview parsed rows (with duplicate & error detection), then commit confirmed rows as real transactions - a two-step preview/commit flow so nothing is saved without user confirmation
 - **Budgets** - set and monitor category-wise budgets with CRUD support
 - **Dashboard** - a consolidated summary view aggregating income, expenses, and account balances
 - **Investment Portfolio** - track stocks, mutual funds, ETFs, and bonds with market-data-enriched views
@@ -58,12 +60,13 @@ FinSight is organized into two milestones, each broken into parts:
 | pydantic-settings | Configuration management |
 | APScheduler | Scheduled/background tasks |
 | httpx | Outbound HTTP (market data calls) |
+| pandas + openpyxl | Parsing CSV/Excel bank statements for import |
 
 **Frontend**
 | Tool | Purpose |
 |------|---------|
 | React 18 | UI library |
-| Vite | Build tool & dev server |
+| Vite 7 | Build tool & dev server |
 | React Router | Client-side routing |
 | Axios | API communication |
 | Recharts | Charts & data visualization |
@@ -101,14 +104,17 @@ FinSight/
 │   │   ├── auth.py                 # Register, login, verify email, password reset
 │   │   ├── accounts.py              # Account CRUD
 │   │   ├── categories.py            # Category CRUD
-│   │   ├── transactions.py          # Transaction CRUD
+│   │   ├── transactions.py          # Transaction CRUD + statement import (preview/commit)
 │   │   ├── budgets.py               # Budget CRUD
 │   │   ├── dashboard.py             # Aggregated dashboard summary
 │   │   ├── investments.py           # Investment CRUD + market data views
 │   │   ├── goals.py                 # Goal CRUD, funding, savings allocation
 │   │   └── trading.py               # Simulated wallet: deposit, buy, sell, history
 │   ├── schemas/                   # Pydantic request/response schemas
+│   │   └── import_transactions.py  # ColumnMapping, ParsedImportRow, preview/commit schemas
 │   ├── services/                  # Business logic layer (one service per domain)
+│   │   └── import_service.py       # Parses uploaded statements, matches categories,
+│   │                                #   flags likely duplicates, commits confirmed rows
 │   ├── scripts/
 │   │   └── generate_finvu_keys.py  # Key generation utility (Finvu integration)
 │   ├── secrets/                    # Finvu keys (gitignored)
@@ -117,6 +123,7 @@ FinSight/
 ├── frontend/
 │   ├── src/
 │   │   ├── api/                    # Axios API clients, one per domain
+│   │   │   └── importApi.js         # Calls /transactions/import/preview & /commit
 │   │   ├── components/
 │   │   │   ├── common/              # Button, Card, Input, ProtectedRoute
 │   │   │   ├── dashboard/           # Chart & summary strip components
@@ -124,9 +131,9 @@ FinSight/
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx      # Auth state provider
 │   │   ├── pages/                   # Login, Register, Dashboard, Accounts,
-│   │   │                            #   Transactions, Budgets, Goals, Investments,
-│   │   │                            #   PortfolioDashboard, Profile, Forgot/Reset Password,
-│   │   │                            #   VerifyEmail
+│   │   │                            #   Transactions (incl. import UI), Budgets, Goals,
+│   │   │                            #   Investments, PortfolioDashboard, Profile,
+│   │   │                            #   Forgot/Reset Password, VerifyEmail
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   ├── package.json
@@ -180,6 +187,15 @@ FinSight/
    ```bash
    npm run dev
    ```
+
+---
+
+## 📥 Importing Bank Statements
+
+1. Go to the **Transactions** page and choose **Import**
+2. Upload a CSV/Excel bank statement and map its columns (date, description, amount, or separate debit/credit columns) to FinSight's transaction fields
+3. Review the **preview** - parsed rows are shown with any parse errors or likely duplicates flagged, and category is suggested via a simple substring match against your existing categories
+4. Edit any rows if needed, then **commit** - only at this point are transactions actually created in your ledger
 
 ---
 

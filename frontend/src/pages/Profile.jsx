@@ -6,6 +6,7 @@ import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { updateProfile, changePassword } from '../api/authApi'
 import { useAuth } from '../context/AuthContext'
+import SessionsCard from '../components/profile/SessionsCard'
 
 // Mirrors the backend's validate_indian_mobile rule: exactly 10 digits,
 // first digit 6-9 (how Indian mobile numbers are actually allocated).
@@ -222,6 +223,8 @@ export default function Profile() {
             Change password
           </Button>
         </Card>
+
+        <SessionsCard />
 
         {showPasswordModal && (
           <ChangePasswordModal

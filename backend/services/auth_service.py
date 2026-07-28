@@ -14,6 +14,7 @@ from backend.core.security import (
 from backend.models.user import User
 from backend.schemas.user import UserRegister
 from backend.services.category_service import seed_default_categories
+from backend.services.session_service import revoke_all_sessions
 
 def register_user(db: Session, user_data: UserRegister) -> User:
     """
@@ -105,15 +106,17 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     return user
 
 
-def create_token_for_user(user: User) -> str:
+def create_token_for_user(user: User, session_id: int) -> str:
     """
-    Create a signed JWT for a given user, embedding their user_id as `sub`
-    and their current token_version as `tv`.
-    If the user later resets their password, token_version is bumped,
-    which makes any JWT signed with the old `tv` invalid immediately -
-    even though the JWT itself hasn't technically expired.
+    Create a signed JWT for a given user, embedding their user_id as `sub`,
+    their current token_version as `tv`, and the session row's id as `sid`.
+
+    `sid` is what makes single-device logout possible: get_current_user
+    checks that this specific session is still active on every request, so
+    revoking one session invalidates only the token(s) tied to it, without
+    needing to bump token_version (which would log out every device at once).
     """
-    return create_access_token(data={"sub": str(user.user_id), "tv": user.token_version})
+    return create_access_token(data={"sub": str(user.user_id), "tv": user.token_version, "sid": session_id})
 
 
 def request_password_reset(db: Session, email: str) -> User | None:
@@ -155,7 +158,10 @@ def change_password(db: Session, user: User, current_password: str, new_password
 def reset_password(db: Session, token: str, new_password: str) -> User:
     """
     Reset a user's password using a valid reset token.
-    Bumps token_version, which invalidates every JWT issued before this point.
+    Bumps token_version (invalidating every JWT issued before this point) AND
+    marks every UserSession row inactive - covers both checks that
+    get_current_user performs, so the "log out all other devices" is
+    complete rather than just relying on token_version alone.
     Raises ValueError if the token is invalid or expired.
     """
     user = db.query(User).filter(User.reset_token == token).first()
@@ -176,5 +182,8 @@ def reset_password(db: Session, token: str, new_password: str) -> User:
 
     db.commit()
     db.refresh(user)
+
+    revoke_all_sessions(db, user.user_id)  # log out every device - this is a full account takeover-recovery action
+
     return user
 

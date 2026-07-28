@@ -27,3 +27,7 @@ export const updateProfile = (data) => axiosClient.put('/auth/me', data)
 
 export const changePassword = (current_password, new_password) =>
   axiosClient.post('/auth/change-password', { current_password, new_password })
+
+export const getSessions = () => axiosClient.get('/auth/sessions')
+
+export const revokeSession = (sessionId) => axiosClient.delete(`/auth/sessions/${sessionId}`)

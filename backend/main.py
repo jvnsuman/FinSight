@@ -77,6 +77,13 @@ from backend.routers import goals
 from backend.models import trade as trade_model  # noqa: F401
 from backend.routers import trading
 
+# ---------------------------------------------------------------
+# MILESTONE 3 - PART: Notifications & Alerts - ACTIVE
+# ---------------------------------------------------------------
+from backend.models import notification as notification_model  # noqa: F401
+from backend.models import user_session as user_session_model  # noqa: F401
+from backend.routers import notifications
+
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 
@@ -127,3 +134,4 @@ app.include_router(dashboard.router)      # Part 4 - ACTIVE
 app.include_router(investments.router)    # Milestone 2, Part 1 - ACTIVE
 app.include_router(goals.router)          # Milestone 2, Part 3 - ACTIVE
 app.include_router(trading.router)        # Milestone 2, Trading extension - ACTIVE
+app.include_router(notifications.router)  # Milestone 3, Notifications & Alerts - ACTIVE

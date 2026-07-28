@@ -92,73 +92,155 @@ FinSight is organized into three milestones, each broken into parts:
 
 ```
 FinSight/
-├── alembic/                     # Database migrations
+├── alembic/
+│   ├── README
 │   ├── env.py
-│   └── versions/                 # 8 migrations: users, investments, price cache,
-│                                  #   goals, trading wallet, savings pool,
-│                                  #   user sessions, notifications
+│   ├── script.py.mako
+│   └── versions/
+│       ├── a18d06e7e499_add_missing_user_profile_columns.py
+│       ├── a429c396ee12_add_investments_table.py
+│       ├── a7d3f1c9b204_add_user_sessions_table.py
+│       ├── b53f1d8a2c47_add_price_cache_table.py
+│       ├── c67e2f9b3d81_add_goals_table.py
+│       ├── d78a4e5f9c12_add_trading_wallet_and_trades.py
+│       ├── e91b6f3a7d24_add_savings_pool.py
+│       └── f4a7c8e2b915_add_notifications_table.py
 ├── alembic.ini
 │
 ├── backend/
-│   ├── main.py                   # FastAPI app entrypoint & router registration
-│   ├── config.py                 # App/DB/email settings (gitignored - contains secrets)
-│   ├── database.py                # SQLAlchemy engine/session setup
+│   ├── __init__.py
+│   ├── main.py                       # FastAPI app entrypoint & router registration
+│   ├── config.py                     # App/DB/email settings (gitignored - contains secrets)
+│   ├── database.py                   # SQLAlchemy engine/session setup
+│   ├── requirements.txt
+│   │
 │   ├── core/
-│   │   ├── dependencies.py        # Shared FastAPI dependencies; get_current_user now
-│   │   │                          #   validates the session behind the JWT's sid claim
-│   │   └── security.py            # Password hashing, token utilities, device-info parsing
-│   ├── models/                    # SQLAlchemy models: user, account, category,
-│   │                               #   transaction, budget, investment, price_cache,
-│   │                               #   goal, trade, notification, user_session
-│   ├── routers/                   # API route definitions
-│   │   ├── auth.py                 # Register, login, verify email, password reset
-│   │   ├── accounts.py              # Account CRUD
-│   │   ├── categories.py            # Category CRUD
-│   │   ├── transactions.py          # Transaction CRUD + statement import (preview/commit)
-│   │   ├── budgets.py               # Budget CRUD
-│   │   ├── dashboard.py             # Aggregated dashboard summary
-│   │   ├── investments.py           # Investment CRUD + market data views
-│   │   ├── goals.py                 # Goal CRUD, funding, savings allocation
-│   │   ├── trading.py               # Simulated wallet: deposit, buy, sell, history
-│   │   └── notifications.py         # List/read notifications, list & revoke sessions
-│   ├── schemas/                   # Pydantic request/response schemas
-│   │   ├── import_transactions.py  # ColumnMapping, ParsedImportRow, preview/commit schemas
-│   │   ├── notification.py          # Notification response schemas
-│   │   └── session.py               # Session list/revoke schemas
-│   ├── services/                  # Business logic layer (one service per domain)
-│   │   ├── import_service.py       # Parses uploaded statements, matches categories,
-│   │   │                            #   flags likely duplicates, commits confirmed rows
-│   │   ├── notification_service.py # Creates & queries in-app notifications
-│   │   └── session_service.py      # Creates, lists, and revokes login sessions
+│   │   ├── __init__.py
+│   │   ├── dependencies.py            # Shared FastAPI dependencies; get_current_user
+│   │   │                              #   validates the session behind the JWT's sid claim
+│   │   └── security.py                # Password hashing, token utilities, device-info parsing
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── account.py
+│   │   ├── budget.py
+│   │   ├── category.py
+│   │   ├── goal.py
+│   │   ├── investment.py
+│   │   ├── notification.py
+│   │   ├── price_cache.py
+│   │   ├── trade.py
+│   │   ├── transaction.py
+│   │   ├── user.py
+│   │   └── user_session.py
+│   │
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── accounts.py
+│   │   ├── auth.py                    # Register, login, verify email, password reset
+│   │   ├── budgets.py
+│   │   ├── categories.py
+│   │   ├── dashboard.py
+│   │   ├── goals.py                   # Goal CRUD, funding, savings allocation
+│   │   ├── investments.py             # Investment CRUD + market data views
+│   │   ├── notifications.py           # List/read notifications, list & revoke sessions
+│   │   ├── trading.py                 # Simulated wallet: deposit, buy, sell, history
+│   │   └── transactions.py            # Transaction CRUD + statement import (preview/commit)
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── account.py
+│   │   ├── budget.py
+│   │   ├── category.py
+│   │   ├── dashboard.py
+│   │   ├── goal.py
+│   │   ├── import_transactions.py     # ColumnMapping, ParsedImportRow, preview/commit schemas
+│   │   ├── investment.py
+│   │   ├── notification.py            # Notification response schemas
+│   │   ├── portfolio.py
+│   │   ├── session.py                 # Session list/revoke schemas
+│   │   ├── trade.py
+│   │   ├── transaction.py
+│   │   └── user.py
+│   │
 │   ├── scripts/
-│   │   └── generate_finvu_keys.py  # Key generation utility (Finvu integration)
-│   ├── secrets/                    # Finvu keys (gitignored)
-│   └── requirements.txt
+│   │   ├── __init__.py
+│   │   └── generate_finvu_keys.py     # Key generation utility (Finvu integration)
+│   │
+│   ├── secrets/                       # Finvu keys (gitignored)
+│   │   ├── finvu_private_key.pem
+│   │   └── finvu_public_key.jwk.json
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── account_service.py
+│   │   ├── analytics_service.py
+│   │   ├── auth_service.py
+│   │   ├── budget_service.py
+│   │   ├── category_service.py
+│   │   ├── dashboard_service.py
+│   │   ├── email_service.py
+│   │   ├── goal_service.py
+│   │   ├── import_service.py          # Parses uploaded statements, matches categories,
+│   │   │                              #   flags likely duplicates, commits confirmed rows
+│   │   ├── investment_service.py
+│   │   ├── market_data_service.py
+│   │   ├── notification_service.py    # Creates & queries in-app notifications
+│   │   ├── savings_service.py
+│   │   ├── session_service.py         # Creates, lists, and revokes login sessions
+│   │   ├── trade_service.py
+│   │   └── transaction_service.py
+│   │
+│   └── utils/
+│       └── __init__.py
 │
 ├── frontend/
-│   ├── src/
-│   │   ├── api/                    # Axios API clients, one per domain
-│   │   │   ├── importApi.js         # Calls /transactions/import/preview & /commit
-│   │   │   └── notificationsApi.js  # Fetch notifications, list/revoke sessions
-│   │   ├── components/
-│   │   │   ├── common/              # Button, Card, Input, ProtectedRoute
-│   │   │   ├── dashboard/           # Chart & summary strip components
-│   │   │   ├── layout/              # AppShell, Sidebar, NotificationBell
-│   │   │   └── profile/             # SessionsCard - lists & revokes active sessions
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx      # Auth state provider
-│   │   ├── pages/                   # Login, Register, Dashboard, Accounts,
-│   │   │                            #   Transactions (incl. import UI), Budgets, Goals,
-│   │   │                            #   Investments, PortfolioDashboard, Profile (incl.
-│   │   │                            #   active sessions), Forgot/Reset Password, VerifyEmail
-│   │   ├── App.jsx
-│   │   └── main.jsx
+│   ├── index.html
 │   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
 │   ├── vite.config.js
-│   └── tailwind.config.js
+│   ├── public/
+│   │
+│   └── src/
+│       ├── App.jsx
+│       ├── main.jsx
+│       ├── index.css
+│       │
+│       ├── api/                       # Axios API clients, one per domain
+│       │   ├── accountsApi.js
+│       │   ├── authApi.js
+│       │   ├── axiosClient.js
+│       │   ├── budgetsApi.js
+│       │   ├── categoriesApi.js
+│       │   ├── dashboardApi.js
+│       │   ├── goalsApi.js
+│       │   ├── importApi.js           # Calls /transactions/import/preview & /commit
+│       │   ├── investmentsApi.js
+│       │   ├── notificationsApi.js    # Fetch notifications, list/revoke sessions
+│       │   ├── tradingApi.js
+│       │   └── transactionsApi.js
+│       │
+│       ├── components/
+│       │   ├── common/                # Button, Card, Input, ProtectedRoute
+│       │   ├── dashboard/              # Chart & summary strip components
+│       │   ├── layout/                 # AppShell, Sidebar, NotificationBell
+│       │   └── profile/                # SessionsCard - lists & revokes active sessions
+│       │
+│       ├── context/
+│       │   └── AuthContext.jsx         # Auth state provider
+│       │
+│       ├── hooks/
+│       │
+│       └── pages/                     # Login, Register, Dashboard, Accounts,
+│                                       #   Transactions (incl. import UI), Budgets, Goals,
+│                                       #   Investments, PortfolioDashboard, Profile (incl.
+│                                       #   active sessions), Forgot/Reset Password, VerifyEmail
 │
-└── .github/workflows/ci.yml       # CI: backend lint/compile + frontend build
+└── .github/workflows/ci.yml           # CI: backend lint/compile + frontend build
 ```
+
 
 ---
 
@@ -245,3 +327,4 @@ GitHub: [@jvnsuman](https://github.com/jvnsuman)
 ---
 
 © 2026 Jivan Suman. All Rights Reserved.
+

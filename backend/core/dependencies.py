@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from backend.core.security import decode_access_token
 from backend.database import get_db
 from backend.models.user import User
+from backend.services.session_service import is_session_active, touch_session
 
 # Tells FastAPI's docs where to send the login request to get a token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -20,7 +21,9 @@ def get_current_user (
 ) -> User:
     """
     Decodes the JWT from the Authorization header, fetches the matching user.
-    Raises 401 if the token is missing, invalid, expired, or the user no longer exists.
+    Raises 401 if the token is missing, invalid, expired, the user no longer
+    exists, or the specific session this token belongs to has been revoked
+    (logged out remotely from another device - Milestone 3 session management).
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -34,6 +37,7 @@ def get_current_user (
     
     user_id = payload.get("sub")
     token_version = payload.get("tv")
+    session_id = payload.get("sid")
     if user_id is None or token_version is None:
         raise credentials_exception
     
@@ -49,5 +53,32 @@ def get_current_user (
             detail="Session expired due to a password change. Please log in again.",
             headers={"WWW-Authenticate": "Bearer"}
         )
-    
+
+    # Tokens issued before this feature existed have no `sid` claim - treat
+    # them as valid rather than locking out every pre-existing session; new
+    # logins always carry a sid going forward.
+    if session_id is not None:
+        if not is_session_active(db, int(session_id)):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="This session has been logged out from another device. Please log in again.",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        touch_session(db, int(session_id))
+
     return user
+
+
+def get_current_session_id(token: str = Depends(oauth2_scheme)) -> int | None:
+    """
+    Extracts just the `sid` claim from the current request's JWT, without
+    re-validating the whole session (get_current_user already does that in
+    the same request). Used by endpoints like change-password that need to
+    reissue a token for the SAME session rather than creating a new one.
+    Returns None for older tokens issued before this feature existed.
+    """
+    payload = decode_access_token(token)
+    if payload is None:
+        return None
+    session_id = payload.get("sid")
+    return int(session_id) if session_id is not None else None

@@ -2,11 +2,12 @@
 API routes: register, verify email, resend verification, login, get/update profile.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from backend.core.dependencies import get_current_user
+from backend.core.dependencies import get_current_user, get_current_session_id
+from backend.core.security import parse_device_info
 from backend.database import get_db
 from backend.models.user import User
 from backend.schemas.user import (
@@ -32,6 +33,8 @@ from backend.services.auth_service import (
     change_password,
 )
 from backend.services.email_service import send_verification_email, send_password_reset_email
+from backend.services.session_service import create_session, list_sessions, revoke_session
+from backend.schemas.session import SessionResponse, SessionListResponse, RevokeSessionResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -98,13 +101,18 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Login using email + password.
     Blocks login with a 403 if the account exists but hasn't verified its email yet.
     Uses OAuth2PasswordRequestForm so it works directly with FastAPI's /docs
     "Authorize" button (it sends `username` + `password` as form fields;
     we treat `username` as the email).
+
+    On success, also creates a new session row (Milestone 3 - session
+    management), which fires an in-app "new login" notification and sends a
+    login-alert email. The user can see and revoke this (or any other)
+    session later from GET/DELETE /auth/sessions.
     """
     try:
         user = authenticate_user(db, email=form_data.username, password=form_data.password)
@@ -121,7 +129,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_token_for_user(user)
+    device_info = parse_device_info(request.headers.get("user-agent"))
+    ip_address = request.client.host if request.client else None
+    session = create_session(db, user, device_info, ip_address)
+
+    access_token = create_token_for_user(user, session.session_id)
     return TokenResponse(access_token=access_token, user=user)
 
 
@@ -187,18 +199,63 @@ def update_profile(
 def change_password_endpoint(
     payload: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
+    current_session_id: int | None = Depends(get_current_session_id),
     db: Session = Depends(get_db),
 ):
     """
     Change the logged-in user's password (requires the current password).
     Invalidates tokens on other devices, but immediately issues a fresh token
-    for this session so the user isn't logged out here.
+    for THIS session (not a new one) so the user isn't logged out here and
+    their session doesn't show up twice in their sessions list.
     """
     try:
         user = change_password(db, current_user, payload.current_password, payload.new_password)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    access_token = create_token_for_user(user)
+    access_token = create_token_for_user(user, current_session_id)
     return TokenResponse(access_token=access_token, user=user)
+
+
+@router.get("/sessions", response_model=SessionListResponse)
+def get_sessions(
+    current_user: User = Depends(get_current_user),
+    current_session_id: int | None = Depends(get_current_session_id),
+    db: Session = Depends(get_db),
+):
+    """
+    List every device currently logged into this account. Lets the user spot
+    a session they don't recognize and revoke it with DELETE /auth/sessions/{id}.
+    """
+    sessions = list_sessions(db, current_user.user_id)
+    return SessionListResponse(
+        sessions=[
+            SessionResponse(
+                session_id=s.session_id,
+                device_info=s.device_info,
+                ip_address=s.ip_address,
+                created_at=s.created_at,
+                last_active_at=s.last_active_at,
+                is_current=(s.session_id == current_session_id),
+            )
+            for s in sessions
+        ]
+    )
+
+
+@router.delete("/sessions/{session_id}", response_model=RevokeSessionResponse)
+def revoke_session_endpoint(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Log out one specific device/session - e.g. a session the user doesn't
+    recognize from the list returned by GET /auth/sessions. Every other
+    active session for this user is left untouched.
+    """
+    session = revoke_session(db, current_user.user_id, session_id)
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    return RevokeSessionResponse(session_id=session.session_id, revoked=True)
 

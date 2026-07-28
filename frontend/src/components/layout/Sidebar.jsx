@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { LayoutGrid, Receipt, Wallet, PiggyBank, TrendingUp, Target, LineChart, User, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import NotificationBell from './NotificationBell'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
@@ -16,11 +17,12 @@ export default function Sidebar() {
   const { user, logout } = useAuth()
 
   return (
-    <aside className="w-64 shrink-0 bg-navy min-h-screen flex flex-col">
-      <div className="px-6 py-7">
+    <aside className="relative z-20 w-64 shrink-0 bg-navy min-h-screen flex flex-col">
+      <div className="px-6 py-7 flex items-center justify-between">
         <span className="font-display text-2xl font-semibold text-white">
           Fin<span className="text-mint">Sight</span>
         </span>
+        <NotificationBell />
       </div>
 
       <nav className="flex-1 px-3 space-y-1">

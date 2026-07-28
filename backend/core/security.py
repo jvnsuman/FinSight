@@ -53,3 +53,41 @@ def generate_verification_token() -> str:
     This is NOT a JWT - just a random opaque string stored in the DB and matches on verify.
     """
     return secrets.token_urlsafe(32)
+
+
+def parse_device_info(user_agent: Optional[str]) -> str:
+    """
+    Very lightweight User-Agent -> human-readable device label, e.g.
+    "Chrome on Windows". Good enough for showing users a recognizable list of
+    their own sessions - not meant to be a full UA-parsing library.
+    """
+    if not user_agent:
+        return "Unknown device"
+
+    ua = user_agent.lower()
+
+    if "edg/" in ua:
+        browser = "Edge"
+    elif "chrome/" in ua and "chromium" not in ua:
+        browser = "Chrome"
+    elif "firefox/" in ua:
+        browser = "Firefox"
+    elif "safari/" in ua and "chrome/" not in ua:
+        browser = "Safari"
+    else:
+        browser = "Unknown browser"
+
+    if "windows" in ua:
+        os_name = "Windows"
+    elif "mac os" in ua or "macintosh" in ua:
+        os_name = "macOS"
+    elif "android" in ua:
+        os_name = "Android"
+    elif "iphone" in ua or "ipad" in ua:
+        os_name = "iOS"
+    elif "linux" in ua:
+        os_name = "Linux"
+    else:
+        os_name = "Unknown OS"
+
+    return f"{browser} on {os_name}"

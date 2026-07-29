@@ -14,3 +14,4 @@ joserfc
 httpx
 pandas
 openpyxl
+google-generativeai

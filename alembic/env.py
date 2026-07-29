@@ -19,6 +19,8 @@ from backend.models import investment  # noqa: F401  (Milestone 2, Part 1)
 from backend.models import price_cache  # noqa: F401  (Milestone 2, Part 2)
 from backend.models import goal  # noqa: F401  (Milestone 2, Part 3)
 from backend.models import trade  # noqa: F401  (Milestone 2, Trading extension)
+from backend.models import notification, user_session  # noqa: F401 (Milestone 3)
+from backend.models import financial_health  # noqa: F401 (Financial Health Module)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

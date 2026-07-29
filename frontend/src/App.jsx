@@ -16,6 +16,9 @@ import Investments from './pages/Investments'
 import Goals from './pages/Goals'
 import PortfolioDashboard from './pages/PortfolioDashboard'
 
+import Assistant from './pages/Assistant'
+import FinancialHealth from './pages/FinancialHealth'
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -37,6 +40,8 @@ export default function App() {
           <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
           <Route path="/portfolio" element={<ProtectedRoute><PortfolioDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
+          <Route path="/financial-health" element={<ProtectedRoute><FinancialHealth /></ProtectedRoute>} />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

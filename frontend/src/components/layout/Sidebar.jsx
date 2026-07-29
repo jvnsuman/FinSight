@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutGrid, Receipt, Wallet, PiggyBank, TrendingUp, Target, LineChart, User, LogOut } from 'lucide-react'
+import { LayoutGrid, Receipt, Wallet, PiggyBank, TrendingUp, Target, LineChart, User, LogOut, Bot, Activity } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import NotificationBell from './NotificationBell'
 
@@ -11,6 +11,8 @@ const navItems = [
   { to: '/investments', label: 'Investments', icon: TrendingUp },
   { to: '/goals', label: 'Goals', icon: Target },
   { to: '/portfolio', label: 'Portfolio', icon: LineChart },
+  { to: '/financial-health', label: 'Health Score', icon: Activity },
+  { to: '/assistant', label: 'AI Assistant', icon: Bot },
 ]
 
 export default function Sidebar() {

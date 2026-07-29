@@ -19,6 +19,7 @@ FinSight is organized into three milestones, each broken into parts:
 | 2 | Expense, Accounts & Transactions | ✅ Active |
 | 3 | Budget Monitoring | ✅ Active |
 | 4 | Financial Dashboard | ✅ Active |
+| 5 | Financial Health Score & AI Coach | ✅ Active |
 | Extra | Bank Statement Import (CSV/Excel) | ✅ Active |
 
 **Milestone 2 - Investing & Goals**
@@ -45,6 +46,9 @@ FinSight is organized into three milestones, each broken into parts:
 - **Bank Statement Import** - upload a CSV/Excel statement, map columns to transaction fields, preview parsed rows (with duplicate & error detection), then commit confirmed rows as real transactions
 - **Budgets** - set and monitor category-wise budgets with CRUD support
 - **Dashboard** - a consolidated summary view aggregating income, expenses, and account balances
+- **Financial Health Score** - evaluates your financial habits (savings rate, budget discipline, emergency fund, etc.) and provides a comprehensive score (0-100).
+- **Ultra-Fast What-If Simulator** - interactively adjust habits (e.g. increase savings) to instantly project your future score using a real-time, 0ms latency frontend rule engine.
+- **AI Financial Coach** - integration with Google Gemini AI to analyze your health score and generate tailored recommendations based on simulated or actual scenarios.
 - **Investment Portfolio** - track stocks, mutual funds, ETFs, and bonds with market-data-enriched views
 - **Market Data & Returns** - live price enrichment and return calculations via an external market data service
 - **Financial Goals** - create savings goals, fund them directly, auto-allocate savings, and cover shortfalls
@@ -69,6 +73,7 @@ FinSight is organized into three milestones, each broken into parts:
 | APScheduler | Scheduled/background tasks (notification sweeps) |
 | httpx | Outbound HTTP (market data calls) |
 | pandas + openpyxl | Parsing CSV/Excel bank statements for import |
+| google-generativeai | Gemini AI integration for financial coaching |
 
 **Frontend**
 | Tool | Purpose |
@@ -141,6 +146,7 @@ FinSight/
 │   │   ├── budgets.py
 │   │   ├── categories.py
 │   │   ├── dashboard.py
+│   │   ├── financial_health.py        # Health score calc, simulation, and AI coach
 │   │   ├── goals.py                   # Goal CRUD, funding, savings allocation
 │   │   ├── investments.py             # Investment CRUD + market data views
 │   │   ├── notifications.py           # List/read notifications, list & revoke sessions
@@ -180,6 +186,7 @@ FinSight/
 │   │   ├── category_service.py
 │   │   ├── dashboard_service.py
 │   │   ├── email_service.py
+│   │   ├── financial_health_service.py # Core logic for health metrics & Gemini AI interaction
 │   │   ├── goal_service.py
 │   │   ├── import_service.py          # Parses uploaded statements, matches categories,
 │   │   │                              #   flags likely duplicates, commits confirmed rows
@@ -215,6 +222,7 @@ FinSight/
 │       │   ├── budgetsApi.js
 │       │   ├── categoriesApi.js
 │       │   ├── dashboardApi.js
+│       │   ├── financialHealthApi.js  # Score fetching, low-latency simulation & AI coach
 │       │   ├── goalsApi.js
 │       │   ├── importApi.js           # Calls /transactions/import/preview & /commit
 │       │   ├── investmentsApi.js
@@ -235,8 +243,9 @@ FinSight/
 │       │
 │       └── pages/                     # Login, Register, Dashboard, Accounts,
 │                                       #   Transactions (incl. import UI), Budgets, Goals,
-│                                       #   Investments, PortfolioDashboard, Profile (incl.
-│                                       #   active sessions), Forgot/Reset Password, VerifyEmail
+│                                       #   Investments, PortfolioDashboard, FinancialHealth, 
+│                                       #   Profile (incl. active sessions), Forgot/Reset Password, 
+│                                       #   VerifyEmail
 │
 └── .github/workflows/ci.yml           # CI: backend lint/compile + frontend build
 ```

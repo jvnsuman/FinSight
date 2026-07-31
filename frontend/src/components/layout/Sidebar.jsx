@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutGrid, Receipt, Wallet, PiggyBank, TrendingUp, Target, LineChart, User, LogOut, Bot, Activity } from 'lucide-react'
+import { LayoutGrid, Receipt, Wallet, PiggyBank, TrendingUp, Target, LineChart, User, LogOut, Bot, Activity, FileText } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import NotificationBell from './NotificationBell'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
   { to: '/transactions', label: 'Transactions', icon: Receipt },
+  { to: '/monthly-report', label: 'Monthly Report', icon: FileText },
   { to: '/accounts', label: 'Accounts', icon: Wallet },
   { to: '/budgets', label: 'Budgets', icon: PiggyBank },
   { to: '/investments', label: 'Investments', icon: TrendingUp },

@@ -388,7 +388,9 @@ This project was developed as part of the **Infosys Springboard Virtual Internsh
 - **sharma26004-creator** - [@sharma26004-creator](https://github.com/sharma26004-creator) - Monthly Report PDF export fixes, custom SVG legend
 
 **Collaborators**
+- **Bhavesh Harad** - [@Bhavesh-Harad](https://github.com/Bhavesh-Harad)
 - **harshamukeshjonnadula-07** - [@harshamukeshjonnadula-07](https://github.com/harshamukeshjonnadula-07)
+- **sharma26004-creator** - [@sharma26004-creator](https://github.com/sharma26004-creator)
 
 ---
 

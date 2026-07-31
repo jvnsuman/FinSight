@@ -11,6 +11,25 @@ export const getTransactions = (filters = {}) => {
   return axiosClient.get(`/transactions${qs ? `?${qs}` : ''}`)
 }
 
+// Pulls the user's ENTIRE transaction history by paging through /transactions
+// (the backend caps a single request at 200 rows and defaults to just the
+// most recent 50). Anything that needs full-history aggregation - e.g. the
+// Monthly Report's opening balance and past-month lookups - must use this
+// instead of getTransactions(), or older months silently come back empty.
+export const getAllTransactions = async (filters = {}) => {
+  const pageSize = 200
+  let offset = 0
+  let all = []
+  while (true) {
+    const res = await getTransactions({ ...filters, limit: pageSize, offset })
+    const page = Array.isArray(res?.data) ? res.data : []
+    all = all.concat(page)
+    if (page.length < pageSize) break
+    offset += pageSize
+  }
+  return all
+}
+
 export const createTransaction = (data) => axiosClient.post('/transactions', data)
 
 export const updateTransaction = (transactionId, data) => axiosClient.put(`/transactions/${transactionId}`, data)

@@ -102,53 +102,203 @@ FinSight is organized into three milestones, each broken into parts:
 
 ```
 FinSight/
+├── LICENSE
+├── README.md
+├── .gitignore
+│
 ├── alembic/
+│   ├── README
 │   ├── env.py
 │   ├── script.py.mako
-│   └── versions/                     # 13 migrations covering users, investments,
-│                                      #   price cache, goals, trading wallet, savings
-│                                      #   pool, user sessions, notifications, financial
-│                                      #   health cache, and session/deactivation fixes
+│   └── versions/
+│       ├── a18d06e7e499_add_missing_user_profile_columns.py
+│       ├── a429c396ee12_add_investments_table.py
+│       ├── a7d3f1c9b204_add_user_sessions_table.py
+│       ├── b53f1d8a2c47_add_price_cache_table.py
+│       ├── c67e2f9b3d81_add_goals_table.py
+│       ├── d78a4e5f9c12_add_trading_wallet_and_trades.py
+│       ├── e91b6f3a7d24_add_savings_pool.py
+│       ├── f4a7c8e2b915_add_notifications_table.py
+│       ├── 2b9ef4897491_add_financial_health_cache_model.py
+│       ├── b8e2d5a913f7_add_action_url_to_notifications.py
+│       ├── c3f9a7e1d824_merge_heads_and_fix_user_sessions.py
+│       └── f02c8a1d4b56_add_sessions_and_account_deactivation.py
 ├── alembic.ini
 ├── fix_sessions_table.py             # One-off script fixing a bad merge migration's schema
 │
 ├── backend/
-│   ├── main.py                       # FastAPI app entrypoint, router registration, scheduler startup
-│   ├── config.py                     # App/DB/email settings (gitignored - contains secrets)
-│   ├── database.py                   # SQLAlchemy engine/session setup
+│   ├── __init__.py
+│   ├── main.py                        # FastAPI entrypoint, router registration, scheduler startup
+│   ├── config.py                      # App/DB/email settings (gitignored - contains secrets)
+│   ├── database.py                    # SQLAlchemy engine/session setup
+│   ├── requirements.txt
 │   │
-│   ├── core/                         # Shared dependencies, password/token/session security
-│   ├── models/                       # SQLAlchemy models (accounts, transactions, budgets,
-│   │                                  #   investments, goals, trades, notifications, sessions,
-│   │                                  #   financial health cache)
-│   ├── routers/                      # API routes: auth, accounts, categories, transactions,
-│   │                                  #   budgets, dashboard, investments, goals, trading,
-│   │                                  #   notifications, sessions, financial_health, assistant
-│   ├── schemas/                      # Pydantic request/response schemas
-│   ├── services/                     # Business logic layer, one service per domain, incl.
-│   │                                  #   alert_service.py (threshold-crossing notification logic)
-│   │                                  #   and account_cleanup_service.py
-│   ├── scheduler/                    # APScheduler setup (setup.py) & job definitions (jobs.py)
-│   ├── scripts/                      # generate_finvu_keys.py, purge_deleted_accounts.py
-│   └── secrets/                      # Finvu keys (gitignored)
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── dependencies.py             # get_current_user - validates JWT + active session
+│   │   └── security.py                 # Password hashing, token utilities, device-info parsing
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── account.py
+│   │   ├── budget.py
+│   │   ├── category.py
+│   │   ├── financial_health.py
+│   │   ├── goal.py
+│   │   ├── investment.py
+│   │   ├── notification.py
+│   │   ├── price_cache.py
+│   │   ├── session.py                  # Current per-device session model (jti-based)
+│   │   ├── trade.py
+│   │   ├── transaction.py
+│   │   ├── user.py
+│   │   └── user_session.py             # Earlier session model, superseded by session.py
+│   │
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── accounts.py
+│   │   ├── assistant.py                # AI financial assistant query endpoint
+│   │   ├── auth.py                     # Register, login, verify email, password reset
+│   │   ├── budgets.py
+│   │   ├── categories.py
+│   │   ├── dashboard.py
+│   │   ├── financial_health.py         # Score, refresh, what-if simulation, health coach chat
+│   │   ├── goals.py                    # Goal CRUD, funding, savings allocation
+│   │   ├── investments.py              # Investment CRUD + market data views
+│   │   ├── notifications.py            # List/read notifications
+│   │   ├── sessions.py                 # List & revoke active login sessions
+│   │   ├── trading.py                  # Simulated wallet: deposit, buy, sell, history
+│   │   └── transactions.py             # Transaction CRUD + statement import (preview/commit)
+│   │
+│   ├── scheduler/
+│   │   ├── __init__.py
+│   │   ├── setup.py                    # APScheduler configuration & job registration
+│   │   └── jobs.py                     # Job functions: price moves, goal deadlines, summaries
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── account.py
+│   │   ├── assistant.py
+│   │   ├── budget.py
+│   │   ├── category.py
+│   │   ├── dashboard.py
+│   │   ├── goal.py
+│   │   ├── import_transactions.py      # ColumnMapping, ParsedImportRow, preview/commit schemas
+│   │   ├── investment.py
+│   │   ├── notification.py
+│   │   ├── portfolio.py
+│   │   ├── session.py
+│   │   ├── trade.py
+│   │   ├── transaction.py
+│   │   └── user.py
+│   │
+│   ├── scripts/
+│   │   ├── __init__.py
+│   │   ├── generate_finvu_keys.py      # Key generation utility (Finvu integration)
+│   │   └── purge_deleted_accounts.py   # Scheduled cleanup of deactivated accounts
+│   │
+│   ├── secrets/                        # Finvu keys (gitignored)
+│   │   ├── finvu_private_key.pem
+│   │   └── finvu_public_key.jwk.json
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── account_cleanup_service.py   # Deactivation & purge logic
+│   │   ├── account_service.py
+│   │   ├── alert_service.py             # Threshold-crossing detection -> notifications
+│   │   ├── analytics_service.py
+│   │   ├── assistant_service.py
+│   │   ├── auth_service.py
+│   │   ├── budget_service.py
+│   │   ├── category_service.py
+│   │   ├── dashboard_service.py
+│   │   ├── email_service.py
+│   │   ├── financial_health_service.py
+│   │   ├── goal_service.py
+│   │   ├── import_service.py           # Parses uploaded statements, flags duplicates, commits rows
+│   │   ├── investment_service.py
+│   │   ├── market_data_service.py
+│   │   ├── notification_service.py
+│   │   ├── savings_service.py
+│   │   ├── session_service.py
+│   │   ├── trade_service.py
+│   │   └── transaction_service.py
+│   │
+│   └── utils/
+│       └── __init__.py
 │
 ├── frontend/
+│   ├── .gitignore
+│   ├── .env.example
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── vite.config.js
+│   ├── public/
+│   │   └── login-bg.jpg
+│   │
 │   └── src/
-│       ├── api/                      # Axios clients, one per domain
+│       ├── App.jsx
+│       ├── main.jsx
+│       ├── index.css
+│       │
+│       ├── api/                        # Axios API clients, one per domain
+│       │   ├── accountsApi.js
+│       │   ├── assistantApi.js
+│       │   ├── authApi.js
+│       │   ├── axiosClient.js
+│       │   ├── budgetsApi.js
+│       │   ├── categoriesApi.js
+│       │   ├── dashboardApi.js
+│       │   ├── financialHealthApi.js
+│       │   ├── goalsApi.js
+│       │   ├── importApi.js
+│       │   ├── investmentsApi.js
+│       │   ├── notificationsApi.js
+│       │   ├── sessionsApi.js
+│       │   ├── tradingApi.js
+│       │   └── transactionsApi.js       # Includes getAllTransactions() for full-history paging
+│       │
 │       ├── components/
-│       │   ├── common/                # Button, Card, Input, ProtectedRoute, NotificationDetailModal
-│       │   ├── dashboard/              # Chart & summary strip components
-│       │   ├── layout/                 # AppShell, Sidebar, NotificationBell
-│       │   └── profile/                # SessionsCard - lists & revokes active sessions
-│       ├── context/                   # AuthContext
-│       └── pages/                     # Login, Register, VerifyEmail, VerifyPending, Dashboard,
-│                                       #   Accounts, Transactions, MonthlyReport, Budgets, Goals,
-│                                       #   Investments, PortfolioDashboard, FinancialHealth,
-│                                       #   Assistant, Notifications, Profile,
-│                                       #   Forgot/Reset Password
+│       │   ├── common/                  # Button, Card, Input, ProtectedRoute, NotificationDetailModal
+│       │   ├── dashboard/                # Chart & summary strip components
+│       │   ├── layout/                   # AppShell, Sidebar, NotificationBell
+│       │   └── profile/                  # SessionsCard - lists & revokes active sessions
+│       │
+│       ├── context/
+│       │   └── AuthContext.jsx           # Auth state provider
+│       │
+│       ├── hooks/
+│       │
+│       └── pages/
+│           ├── Login.jsx
+│           ├── Register.jsx
+│           ├── VerifyEmail.jsx
+│           ├── VerifyPending.jsx
+│           ├── ForgotPassword.jsx
+│           ├── ResetPassword.jsx
+│           ├── Dashboard.jsx
+│           ├── Accounts.jsx
+│           ├── Transactions.jsx
+│           ├── MonthlyReport.jsx         # PDF export + custom SVG legend
+│           ├── Budgets.jsx
+│           ├── Goals.jsx
+│           ├── Investments.jsx
+│           ├── PortfolioDashboard.jsx
+│           ├── FinancialHealth.jsx
+│           ├── Assistant.jsx
+│           ├── Notifications.jsx
+│           └── Profile.jsx
 │
-└── .github/workflows/ci.yml          # CI: backend lint/compile + frontend build
+└── .github/
+    └── workflows/
+        └── ci.yml                       # CI: backend lint/compile + frontend build
 ```
+
+> **Note:** `backend/models/user_session.py` (Milestone 3's first session model) is superseded by `backend/models/session.py`, introduced after a bad Alembic merge migration required a schema fix (see `fix_sessions_table.py`). Both files currently exist in the codebase.
+
 
 ---
 

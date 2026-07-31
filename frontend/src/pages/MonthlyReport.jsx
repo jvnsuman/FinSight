@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Download, TrendingUp, TrendingDown, Sparkles, Search, FileText } from 'lucide-react';
 import AppShell from '../components/layout/AppShell';
-import { getTransactions } from '../api/transactionsApi';
+import { getAllTransactions } from '../api/transactionsApi';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#EF4444', '#8884d8'];
 
@@ -17,13 +17,7 @@ export default function MonthlyReport() {
     async function fetchRealData() {
       try {
         setLoading(true);
-        const res = await getTransactions();
-        let data = [];
-        if (res) {
-          if (Array.isArray(res)) data = res;
-          else if (Array.isArray(res.data)) data = res.data;
-          else if (res.transactions && Array.isArray(res.transactions)) data = res.transactions;
-        }
+        const data = await getAllTransactions();
         setTransactions(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch transactions", err);

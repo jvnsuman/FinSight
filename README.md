@@ -378,10 +378,17 @@ This project was developed as part of the **Infosys Springboard Virtual Internsh
 
 ---
 
-## 👤 Author
+## 👤 Author & Contributors
 
-**Jivan Suman**
-GitHub: [@jvnsuman](https://github.com/jvnsuman)
+**Author**
+- **Jivan Suman** - [@jvnsuman](https://github.com/jvnsuman)
+
+**Contributors**
+- **Bhavesh Harad** - [@Bhavesh-Harad](https://github.com/Bhavesh-Harad) - Financial Health Score module, AI Assistant module
+- **sharma26004-creator** - [@sharma26004-creator](https://github.com/sharma26004-creator) - Monthly Report PDF export fixes, custom SVG legend
+
+**Collaborators**
+- **harshamukeshjonnadula-07** - [@harshamukeshjonnadula-07](https://github.com/harshamukeshjonnadula-07)
 
 ---
 

@@ -20,7 +20,6 @@ FinSight is organized into three milestones, each broken into parts:
 | 3 | Budget Monitoring | ✅ Active |
 | 4 | Financial Dashboard | ✅ Active |
 | Extra | Bank Statement Import (CSV/Excel) | ✅ Active |
-| Extra | Monthly Report (PDF export) | ✅ Active |
 | Extra | Savings Pool (automatic monthly refill) | ✅ Active |
 
 **Milestone 2 - Investing & Goals**
@@ -39,8 +38,9 @@ FinSight is organized into three milestones, each broken into parts:
 | 2 | Session Management (per-device tracking & revocation) | ✅ Active |
 | 3 | Scheduled Alerts (APScheduler) | ✅ Active |
 | 4 | Account Deactivation & Cleanup | ✅ Active |
-| Extra | Financial Health Score | ✅ Active |
-| Extra | AI Financial Assistant | ✅ Active |
+| 5 | Financial Health Score | ✅ Active |
+| 6 | AI Financial Assistant | ✅ Active |
+| 7 | Monthly Report (PDF export) | ✅ Active |
 
 ---
 

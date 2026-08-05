@@ -84,7 +84,7 @@ def main():
 
     first_day, last_day = _month_bounds(previous_month)
     summary = _get_summary_cards(db, user.user_id, first_day, last_day)
-    correct_amount = max(Decimal(str(summary["total_savings"])), Decimal("0"))
+    correct_amount = Decimal(str(summary["total_savings"]))
     already_credited = Decimal(str(user.last_refill_amount))
     shortfall = correct_amount - already_credited
 

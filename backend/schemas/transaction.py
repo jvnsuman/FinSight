@@ -4,7 +4,7 @@ Pydantic schemas for transaction.
 
 from datetime import date, datetime
 from typing import Optional, Literal
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from backend.schemas.category import CategoryResponse
 
@@ -19,6 +19,12 @@ class TransactionCreate(BaseModel):
     payment_mode: Optional[str] = Field(default=None, max_length=30)
     transaction_date: date
 
+    @field_validator("transaction_date")
+    @classmethod
+    def date_must_not_be_in_future(cls, v):
+        if v > date.today():
+            raise ValueError("Transaction date cannot be in the future")
+        return v
 
 class TransactionUpdate(BaseModel):
     category_id: Optional[int] = None
@@ -27,6 +33,12 @@ class TransactionUpdate(BaseModel):
     payment_mode: Optional[str] = None
     transaction_date: Optional[date] = None
 
+    @field_validator("transaction_date")
+    @classmethod
+    def date_must_not_be_in_future(cls, v):
+        if v is not None and v > date.today():
+            raise ValueError("Transaction date cannot be in the future")
+        return v
 
 class TransactionResponse(BaseModel):
     transaction_id: int

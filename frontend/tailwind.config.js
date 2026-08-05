@@ -4,9 +4,12 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: '#02C39A', // mint
+        accent: '#028090',  // teal
         ink: {
           DEFAULT: '#1E293B',
           light: '#64748B',
+          dark: '#0B2E33', // navy
         },
         navy: {
           DEFAULT: '#0B2E33',
@@ -40,6 +43,16 @@ export default {
       borderRadius: {
         xl: '0.875rem',
       },
+      animation: {
+        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
+      }
     },
   },
   plugins: [],

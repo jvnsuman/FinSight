@@ -68,12 +68,18 @@ def deposit(db: Session, user_id: int, amount: float) -> Trade:
     if not user:
         raise TradeError("User not found")
 
-    user.cash_balance = Decimal(user.cash_balance) + Decimal(str(amount))
+    deposit_amount = Decimal(str(amount))
+    
+    if deposit_amount > user.savings_pool:
+        raise TradeError(f"Insufficient funds in Savings Pool. You only have {float(user.savings_pool):.2f} available to transfer.")
+
+    user.savings_pool -= deposit_amount
+    user.cash_balance = Decimal(user.cash_balance) + deposit_amount
 
     trade = Trade(
         user_id=user_id,
         action="deposit",
-        cash_amount=Decimal(str(amount)),
+        cash_amount=deposit_amount,
         trade_date=date.today(),
     )
     db.add(trade)

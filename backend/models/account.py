@@ -19,6 +19,7 @@ class Account(Base):
     account_number = Column(String(50), nullable=True)    #last 4 digits or masked reference
     balance = Column(DECIMAL(12, 2), default=0)
     is_active = Column(Boolean, default=True)
+    is_default = Column(Boolean, default=False)    # True for the system-seeded "Cash Amount" wallet
 
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())

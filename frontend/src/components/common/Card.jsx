@@ -1,6 +1,9 @@
-export function Card({ children, className = '' }) {
+export function Card({ children, className = '', onClick }) {
   return (
-    <div className={`bg-white rounded-xl shadow-card border border-slate-100 ${className}`}>
+    <div
+      className={`bg-white rounded-xl shadow-card border border-slate-100 ${className}`}
+      onClick={onClick}
+    >
       {children}
     </div>
   )

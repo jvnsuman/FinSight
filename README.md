@@ -21,6 +21,7 @@ FinSight is organized into three milestones, each broken into parts:
 | 4 | Financial Dashboard | ✅ Active |
 | Extra | Bank Statement Import (CSV/Excel) | ✅ Active |
 | Extra | Monthly Report (PDF export) | ✅ Active |
+| Extra | Savings Pool (automatic monthly refill) | ✅ Active |
 
 **Milestone 2 - Investing & Goals**
 | Part | Feature | Status |
@@ -49,6 +50,7 @@ FinSight is organized into three milestones, each broken into parts:
 - **Accounts, Categories & Transactions** - full CRUD for financial accounts, custom categories, and transaction logging
 - **Bank Statement Import** - upload a CSV/Excel statement, map columns to transaction fields, preview parsed rows (with duplicate & error detection), then commit confirmed rows as real transactions
 - **Monthly Report** - a dedicated report page that pages through a user's full transaction history (not just the most recent page) to compute accurate month-over-month figures, exportable as a PDF with a custom SVG chart legend
+- **Savings Pool** - a running balance that auto-refills once a month with the *previous* month's net savings (income minus expenses) plus a sweep of any loose wallet cash; a breakdown popup shows exactly what was added and which month it came from
 - **Budgets** - set and monitor category-wise budgets with CRUD support
 - **Dashboard** - a consolidated summary view aggregating income, expenses, and account balances
 - **Investment Portfolio** - track stocks, mutual funds, ETFs, and bonds with market-data-enriched views
@@ -361,6 +363,18 @@ FinSight/
 - **Notifications**: the bell icon surfaces alerts, each with a clickable action URL and a detail modal for more context
 - **Scheduled alerts**: background jobs run daily (investment price-move checks, goal deadline warnings) and monthly (summary notifications), only firing when a threshold is newly crossed - not on every page view
 - **Sessions**: the Profile page lists every device/browser logged into your account and lets you revoke any single one without logging out everywhere else
+
+---
+
+## 🛠️ Debugging & One-Off Scripts
+
+A few root-level scripts document real bugs found and fixed in the savings pool auto-refill logic (it was sweeping the current, barely-started month's savings instead of the previous month's):
+
+- `diagnose_savings_pool.py` - read-only diagnostic: prints a user's stored savings pool state next to what the refill logic currently computes, to confirm a discrepancy before touching anything
+- `fix_missed_refill.py` - interactive, one-time correction for a user whose refill already ran and stamped itself done with a wrong/zero amount; asks for explicit confirmation before writing
+- `backfill_refill_source_month.py` - safe-to-rerun backfill that fills in `last_refill_source_month` for users whose refill ran before that column existed, so the savings breakdown popup labels the source month correctly
+
+None of these run automatically - they're manual tools for one-time data fixes, kept in the repo as a record of the bug and its resolution.
 
 ---
 

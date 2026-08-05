@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { X, Wallet, TrendingUp, Target, ShieldCheck, Settings, ArrowRight } from 'lucide-react'
+import { X, Wallet, TrendingUp, Target, ShieldCheck, Settings, ArrowRight, Gauge } from 'lucide-react'
 import Button from './Button'
 
 const TYPE_META = {
@@ -7,6 +7,7 @@ const TYPE_META = {
   investment: { icon: TrendingUp, label: 'Investment', color: 'text-teal' },
   goal: { icon: Target, label: 'Goal', color: 'text-mint' },
   security: { icon: ShieldCheck, label: 'Security', color: 'text-navy' },
+  health_score: { icon: Gauge, label: 'Financial Health', color: 'text-teal' },
   system: { icon: Settings, label: 'System', color: 'text-slate-400' },
 }
 
@@ -18,7 +19,9 @@ const ACTION_LABELS = {
   '/investments': 'Go to Investments',
   '/portfolio': 'Go to Portfolio',
   '/profile': 'Go to Profile',
+  '/profile#sessions': 'View Active Sessions',
   '/dashboard': 'Go to Dashboard',
+  '/financial-health': 'View Health Score',
 }
 
 function formatFullDate(dateString) {

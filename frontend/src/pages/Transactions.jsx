@@ -435,7 +435,12 @@ function TransactionFormModal({ accounts, categories, onClose, onCreated, templa
               <button
                 key={type}
                 type="button"
-                onClick={() => setForm({ ...form, transaction_type: type, category_id: '' })}
+                onClick={() => setForm({
+                  ...form,
+                  transaction_type: type,
+                  category_id: '',
+                  payment_mode: type === 'transfer' ? '' : 'UPI',
+                })}
                 className={`py-2 rounded-lg text-sm font-medium capitalize border transition-colors ${
                   form.transaction_type === type
                     ? 'bg-teal text-white border-teal'
@@ -474,6 +479,25 @@ function TransactionFormModal({ accounts, categories, onClose, onCreated, templa
                   <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {form.transaction_type === 'transfer' && (
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">Payment mode (optional)</label>
+              <select
+                value={form.payment_mode}
+                onChange={(e) => setForm({ ...form, payment_mode: e.target.value })}
+                className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal"
+              >
+                <option value="">Other</option>
+                <option value="ATM Withdrawal">ATM Withdrawal</option>
+              </select>
+              {form.payment_mode === 'ATM Withdrawal' && (
+                <p className="mt-1.5 text-xs text-ink-light">
+                  This amount will be moved into your Cash Amount account.
+                </p>
+              )}
             </div>
           )}
 

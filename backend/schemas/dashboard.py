@@ -41,23 +41,10 @@ class RecentTransactionItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PaymentModeBreakdownItem(BaseModel):
-    payment_mode: str
-    amount: float
-    percent_of_total: float
-
-
-class DayOfWeekBreakdownItem(BaseModel):
-    day_name: str
-    amount: float
-
-
 class DashboardResponse(BaseModel):
     month: date
     summary: SummaryCards
     expense_breakdown: list[ExpenseBreakdownItem]
-    payment_mode_breakdown: list[PaymentModeBreakdownItem]
-    day_of_week_breakdown: list[DayOfWeekBreakdownItem]
     monthly_trend: list[TrendPoint]
     recent_transactions: list[RecentTransactionItem]
     savings_pool: float = Field(

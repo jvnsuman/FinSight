@@ -224,27 +224,14 @@ app.add_middleware(
 )
 
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from backend.database import SessionLocal
-from backend.services.market_data_service import refresh_all_active_symbols
-
-scheduler = BackgroundScheduler()
-
 @app.on_event("startup")
 def on_startup():
-    def refresh_market_data_job():
-        db = SessionLocal()
-        try:
-            refresh_all_active_symbols(db)
-        finally:
-            db.close()
-            
-    scheduler.add_job(refresh_market_data_job, 'interval', minutes=60)
-    scheduler.start()
-    
-@app.on_event("shutdown")
-def on_shutdown():
-    scheduler.shutdown()
+    # NOTE: Base.metadata.create_all() used to run here. Removed - it was
+    # silently creating tables outside of Alembic's migration history,
+    # which masked the fact that the very first migration (a18d06e7e499)
+    # didn't actually create the base tables. Run `alembic upgrade head`
+    # before starting the app; see CONTRIBUTING.md.
+    pass
 
 
 @app.get("/")

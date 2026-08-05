@@ -118,15 +118,7 @@ def _check_and_apply_savings_shortfall(db: Session, user_id: int, expense_amount
     )
 
     pool_before = Decimal(user.savings_pool)
-    
-    # Deduct unspent budget to lockdown funds
-    from backend.services.budget_service import get_locked_budget_amount
-    locked_budget = get_locked_budget_amount(db, user_id, transaction_date)
-    
-    available_savings = pool_before + month_to_date_savings - locked_budget
-    if available_savings < 0:
-        available_savings = Decimal("0")
-        
+    available_savings = pool_before + month_to_date_savings
     if expense_amount <= available_savings:
         return None  # comfortably covered - the normal, silent case
 

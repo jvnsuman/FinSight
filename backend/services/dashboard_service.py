@@ -133,60 +133,6 @@ def _get_monthly_trend(db: Session, user_id: int, first_day: date, last_day: dat
     ]
 
 
-def _get_payment_mode_breakdown(db: Session, user_id: int, first_day: date, last_day: date) -> list[dict]:
-    rows = (
-        db.query(
-            Transaction.payment_mode,
-            func.sum(Transaction.amount).label("total"),
-        )
-        .filter(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == "expense",
-            Transaction.transaction_date >= first_day,
-            Transaction.transaction_date <= last_day,
-        )
-        .group_by(Transaction.payment_mode)
-        .order_by(func.sum(Transaction.amount).desc())
-        .all()
-    )
-
-    grand_total = sum(Decimal(str(r.total)) for r in rows) or Decimal("1")
-
-    breakdown = []
-    for r in rows:
-        amount = Decimal(str(r.total))
-        breakdown.append({
-            "payment_mode": r.payment_mode or "Other",
-            "amount": float(amount),
-            "percent_of_total": round(float((amount / grand_total) * 100), 2),
-        })
-    return breakdown
-
-
-def _get_day_of_week_breakdown(db: Session, user_id: int, first_day: date, last_day: date) -> list[dict]:
-    rows = (
-        db.query(Transaction.transaction_date, Transaction.amount)
-        .filter(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == "expense",
-            Transaction.transaction_date >= first_day,
-            Transaction.transaction_date <= last_day,
-        )
-        .all()
-    )
-
-    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    by_day = {i: 0.0 for i in range(7)}
-    
-    for r in rows:
-        by_day[r.transaction_date.weekday()] += float(r.amount)
-
-    return [
-        {"day_name": day_names[i], "amount": by_day[i]}
-        for i in range(7)
-    ]
-
-
 def _get_recent_transactions(db: Session, user_id: int, limit: int = 5) -> list[dict]:
     rows = (
         db.query(Transaction)
@@ -226,8 +172,6 @@ def get_dashboard_summary(db: Session, user_id: int, month: date) -> dict:
         "month": first_day,
         "summary": _get_summary_cards(db, user_id, first_day, last_day),
         "expense_breakdown": _get_expense_breakdown(db, user_id, first_day, last_day),
-        "payment_mode_breakdown": _get_payment_mode_breakdown(db, user_id, first_day, last_day),
-        "day_of_week_breakdown": _get_day_of_week_breakdown(db, user_id, first_day, last_day),
         "monthly_trend": _get_monthly_trend(db, user_id, first_day, last_day),
         "recent_transactions": _get_recent_transactions(db, user_id),
         "savings_pool": float(get_savings_pool(db, user_id)),

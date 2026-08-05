@@ -164,10 +164,15 @@ def get_dashboard_summary(db: Session, user_id: int, month: date) -> dict:
     """
     first_day, last_day = _month_bounds(month.replace(day=1))
 
+    # Local import to avoid a circular import at module load time - mirrors
+    # the local import savings_service already does the other way around.
+    from backend.services.savings_service import get_savings_pool
+
     return {
         "month": first_day,
         "summary": _get_summary_cards(db, user_id, first_day, last_day),
         "expense_breakdown": _get_expense_breakdown(db, user_id, first_day, last_day),
         "monthly_trend": _get_monthly_trend(db, user_id, first_day, last_day),
         "recent_transactions": _get_recent_transactions(db, user_id),
+        "savings_pool": float(get_savings_pool(db, user_id)),
     }

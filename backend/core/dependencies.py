@@ -44,6 +44,17 @@ def get_current_user (
     user = db.query(User).filter(User.user_id == int(user_id)).first()
     if user is None:
         raise credentials_exception
+
+    # Deactivation already revokes every session (see auth_service.
+    # deactivate_account), so this mainly matters for tokens issued before
+    # the `sid` claim existed - deactivated users shouldn't be able to keep
+    # using those regardless of session state.
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This account has been deactivated.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
     
     # If the password was reset since this token was issued, token_version on the user 
     # will have incremented past what's embedded in this JWT - reject it.

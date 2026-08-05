@@ -124,9 +124,15 @@ FinSight/
 │       ├── 2b9ef4897491_add_financial_health_cache_model.py
 │       ├── b8e2d5a913f7_add_action_url_to_notifications.py
 │       ├── c3f9a7e1d824_merge_heads_and_fix_user_sessions.py
-│       └── f02c8a1d4b56_add_sessions_and_account_deactivation.py
+│       ├── f02c8a1d4b56_add_sessions_and_account_deactivation.py
+│       ├── d4c8f2a6b103_add_is_default_to_accounts.py
+│       ├── e7b3a9c4d215_add_last_refill_amount_to_users.py
+│       └── f8c1d5e6a327_add_last_refill_source_month_to_users.py
 ├── alembic.ini
 ├── fix_sessions_table.py             # One-off script fixing a bad merge migration's schema
+├── diagnose_savings_pool.py          # Read-only diagnostic for the savings-pool refill bug
+├── fix_missed_refill.py              # Interactive one-time correction for a missed refill
+├── backfill_refill_source_month.py   # Safe-to-rerun backfill for the refill source-month label
 │
 ├── backend/
 │   ├── __init__.py
@@ -168,6 +174,7 @@ FinSight/
 │   │   ├── goals.py                    # Goal CRUD, funding, savings allocation
 │   │   ├── investments.py              # Investment CRUD + market data views
 │   │   ├── notifications.py            # List/read notifications
+│   │   ├── savings.py                  # Savings pool breakdown popup data
 │   │   ├── sessions.py                 # List & revoke active login sessions
 │   │   ├── trading.py                  # Simulated wallet: deposit, buy, sell, history
 │   │   └── transactions.py             # Transaction CRUD + statement import (preview/commit)
@@ -189,6 +196,7 @@ FinSight/
 │   │   ├── investment.py
 │   │   ├── notification.py
 │   │   ├── portfolio.py
+│   │   ├── savings.py
 │   │   ├── session.py
 │   │   ├── trade.py
 │   │   ├── transaction.py
@@ -221,7 +229,8 @@ FinSight/
 │   │   ├── investment_service.py
 │   │   ├── market_data_service.py
 │   │   ├── notification_service.py
-│   │   ├── savings_service.py
+│   │   ├── savings_service.py           # Monthly auto-refill: sweeps PREVIOUS month's net
+│   │   │                                #   savings + wallet cash into the pool
 │   │   ├── session_service.py
 │   │   ├── trade_service.py
 │   │   └── transaction_service.py
@@ -259,13 +268,14 @@ FinSight/
 │       │   ├── importApi.js
 │       │   ├── investmentsApi.js
 │       │   ├── notificationsApi.js
+│       │   ├── savingsApi.js
 │       │   ├── sessionsApi.js
 │       │   ├── tradingApi.js
 │       │   └── transactionsApi.js       # Includes getAllTransactions() for full-history paging
 │       │
 │       ├── components/
 │       │   ├── common/                  # Button, Card, Input, ProtectedRoute, NotificationDetailModal
-│       │   ├── dashboard/                # Chart & summary strip components
+│       │   ├── dashboard/                # Chart & summary strip components, SavingsPoolCard
 │       │   ├── layout/                   # AppShell, Sidebar, NotificationBell
 │       │   └── profile/                  # SessionsCard - lists & revokes active sessions
 │       │

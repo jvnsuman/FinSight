@@ -14,6 +14,7 @@ from backend.services.account_service import (
     get_account_or_404,
     update_account,
     delete_account,
+    ensure_default_cash_account,
 )
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
@@ -36,6 +37,9 @@ def list_accounts(
     db: Session = Depends(get_db),
 ):
     """List all accounts for the current user."""
+    # Backfills the Cash Amount wallet for users who registered before this
+    # feature existed - no-ops for everyone else since it's a lookup first.
+    ensure_default_cash_account(db, current_user.user_id)
     return get_user_accounts(db, current_user.user_id, include_inactive)
 
 
@@ -74,4 +78,6 @@ def remove_account(
     try:
         delete_account(db, current_user.user_id, account_id)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        if str(e) == "Account not found":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

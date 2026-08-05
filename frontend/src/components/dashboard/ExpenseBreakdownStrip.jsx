@@ -20,6 +20,15 @@ export default function ExpenseBreakdownStrip({ breakdown }) {
     )
   }
 
+  // Each item's percent_of_total is rounded independently on the backend, so
+  // across several categories the rounded values can sum to just over 100%
+  // (e.g. 33.34 + 33.33 + 33.34 = 100.01). Flexbox doesn't clip overflowing
+  // fixed widths, so the strip would visibly run past its rounded container
+  // - rescale everything down proportionally when that happens, so the
+  // strip's total width always exactly matches its track.
+  const rawTotal = breakdown.reduce((sum, item) => sum + item.percent_of_total, 0)
+  const scale = rawTotal > 100 ? 100 / rawTotal : 1
+
   return (
     <Card className="p-6">
       <h2 className="font-display text-lg font-semibold text-ink mb-4">Where it went</h2>
@@ -30,7 +39,7 @@ export default function ExpenseBreakdownStrip({ breakdown }) {
           <div
             key={item.category_id ?? 'uncategorized'}
             style={{
-              width: `${item.percent_of_total}%`,
+              width: `${item.percent_of_total * scale}%`,
               backgroundColor: STRIP_COLORS[i % STRIP_COLORS.length],
             }}
             title={`${item.category_name}: ${item.percent_of_total}%`}

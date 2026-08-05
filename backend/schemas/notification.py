@@ -18,6 +18,7 @@ class NotificationCreate(BaseModel):
     title: str = Field(min_length=1, max_length=150)
     message: str = Field(min_length=1, max_length=500)
     type: str = Field(default="system", max_length=50)
+    action_url: Optional[str] = Field(default=None, max_length=255)
 
 
 class NotificationResponse(BaseModel):
@@ -26,6 +27,7 @@ class NotificationResponse(BaseModel):
     message: str
     type: str
     is_read: bool
+    action_url: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

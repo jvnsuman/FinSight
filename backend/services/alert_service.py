@@ -202,3 +202,63 @@ def notify_trade_executed(db: Session, user_id: int, action: str, asset_name: st
         type="investment",
         action_url="/investments",
     )
+
+
+# Financial health score bands, mirrored from
+# financial_health_service._get_health_category. A user only needs to hear
+# about it when their standing changes for the better or the worse - not on
+# every routine cache refresh - so this only cares about two edges:
+# entering "good" territory (score >= HEALTH_GOOD_THRESHOLD) and entering
+# "bad" territory (score < HEALTH_BAD_THRESHOLD).
+HEALTH_GOOD_THRESHOLD = 60   # "Good" or better, per _get_health_category
+HEALTH_BAD_THRESHOLD = 40    # below this is "Financially At Risk"
+
+
+def check_health_score_status(
+    db: Session,
+    user_id: int,
+    old_score: int | None,
+    new_score: int,
+    category: str,
+) -> None:
+    """
+    Call this right after the financial health score is recomputed. Fires a
+    notification only when the score newly crosses into "good" territory
+    (>= HEALTH_GOOD_THRESHOLD) or newly crosses into "bad" territory
+    (< HEALTH_BAD_THRESHOLD), so the user is told when their standing
+    actually changes rather than being re-notified every refresh while it
+    stays in the same band. old_score=None (first-ever calculation) never
+    fires, since there's nothing to compare against yet.
+    """
+    if old_score is None:
+        return
+
+    was_good = old_score >= HEALTH_GOOD_THRESHOLD
+    is_good = new_score >= HEALTH_GOOD_THRESHOLD
+    was_bad = old_score < HEALTH_BAD_THRESHOLD
+    is_bad = new_score < HEALTH_BAD_THRESHOLD
+
+    if is_good and not was_good:
+        create_notification(
+            db=db,
+            user_id=user_id,
+            title="Your financial health is looking good",
+            message=(
+                f"Your financial health score is now {new_score} ({category}). "
+                f"Keep up the good habits that got you here."
+            ),
+            type="health_score",
+            action_url="/financial-health",
+        )
+    elif is_bad and not was_bad:
+        create_notification(
+            db=db,
+            user_id=user_id,
+            title="Your financial health needs attention",
+            message=(
+                f"Your financial health score has dropped to {new_score} ({category}). "
+                f"Take a look at what's pulling it down."
+            ),
+            type="health_score",
+            action_url="/financial-health",
+        )

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell } from 'lucide-react'
 import {
   getNotifications,
@@ -6,6 +7,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
 } from '../../api/notificationsApi'
+import NotificationDetailModal from '../common/NotificationDetailModal'
 
 const POLL_INTERVAL_MS = 30000
 
@@ -31,10 +33,12 @@ const TYPE_DOT_COLOR = {
 }
 
 export default function NotificationBell() {
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedNotification, setSelectedNotification] = useState(null)
   const dropdownRef = useRef(null)
 
   const refreshUnreadCount = useCallback(async () => {
@@ -93,6 +97,19 @@ export default function NotificationBell() {
     }
   }
 
+  const handleOpenNotification = (notification) => {
+    setIsOpen(false) // close the dropdown either way
+    if (!notification.is_read) handleMarkRead(notification.notification_id)
+
+    if (notification.action_url) {
+      navigate(notification.action_url)
+    } else {
+      // Nothing to jump to (e.g. a plain system notification) - show the
+      // full message in the detail modal instead of doing nothing.
+      setSelectedNotification(notification)
+    }
+  }
+
   const handleMarkAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
     setUnreadCount(0)
@@ -147,7 +164,7 @@ export default function NotificationBell() {
               notifications.map((n) => (
                 <button
                   key={n.notification_id}
-                  onClick={() => !n.is_read && handleMarkRead(n.notification_id)}
+                  onClick={() => handleOpenNotification(n)}
                   className={`w-full text-left px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-surface transition-colors ${
                     n.is_read ? 'opacity-60' : ''
                   }`}
@@ -169,6 +186,11 @@ export default function NotificationBell() {
           </div>
         </div>
       )}
+
+      <NotificationDetailModal
+        notification={selectedNotification}
+        onClose={() => setSelectedNotification(null)}
+      />
     </div>
   )
 }

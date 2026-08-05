@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getDashboardSummary } from '../api/dashboardApi'
 import AppShell from '../components/layout/AppShell'
 import SummaryCards from '../components/dashboard/SummaryCards'
+import SavingsPoolCard from '../components/dashboard/SavingsPoolCard'
 import ExpenseBreakdownStrip from '../components/dashboard/ExpenseBreakdownStrip'
 import MonthlyTrendChart from '../components/dashboard/MonthlyTrendChart'
 import RecentTransactions from '../components/dashboard/RecentTransactions'
@@ -83,6 +84,10 @@ export default function Dashboard() {
       ) : (
         <div className="space-y-6">
           <SummaryCards summary={data.summary} />
+
+          <div className="max-w-xs">
+            <SavingsPoolCard savingsPool={data.savings_pool} />
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ExpenseBreakdownStrip breakdown={data.expense_breakdown} />

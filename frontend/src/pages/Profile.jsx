@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { User as UserIcon, Lock, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { User as UserIcon, Lock, X, AlertTriangle } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
 import { Card, ErrorBanner, SuccessBanner, PageLoader } from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { updateProfile, changePassword } from '../api/authApi'
+import { updateProfile, changePassword, deactivateAccount } from '../api/authApi'
 import { useAuth } from '../context/AuthContext'
 import SessionsCard from '../components/profile/SessionsCard'
 
@@ -195,9 +196,108 @@ function ChangePasswordModal({ onClose, onChanged }) {
   )
 }
 
+function DeactivateAccountModal({ onClose, onDeactivated }) {
+  const [form, setForm] = useState({ current_password: '', reason: '', confirm_text: '' })
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value })
+  const confirmed = form.confirm_text.trim().toUpperCase() === 'DEACTIVATE'
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    if (!confirmed) {
+      setError('Type DEACTIVATE to confirm.')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const res = await deactivateAccount(form.current_password, form.reason.trim() || undefined)
+      onDeactivated(res.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not deactivate your account.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-ink/40 flex items-center justify-center px-4 z-50">
+      <div className="bg-white rounded-xl shadow-soft w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-display text-lg font-semibold text-ink flex items-center gap-2">
+            <AlertTriangle size={20} className="text-coral" />
+            Deactivate account
+          </h2>
+          <button onClick={onClose} className="text-ink-light hover:text-ink"><X size={20} /></button>
+        </div>
+
+        <div className="bg-coral-light border border-coral/20 text-sm text-ink rounded-lg px-4 py-3 mb-4 space-y-1">
+          <p>You'll be logged out of every device immediately.</p>
+          <p>Your account and all data will be <strong>permanently deleted after 30 days</strong> unless you contact support to reactivate it before then.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <ErrorBanner message={error} />
+
+          <Input
+            label="Current password"
+            type="password"
+            value={form.current_password}
+            onChange={handleChange('current_password')}
+            required
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">Reason (optional)</label>
+            <textarea
+              value={form.reason}
+              onChange={handleChange('reason')}
+              rows={2}
+              placeholder="Let us know why you're leaving..."
+              className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal resize-none"
+            />
+          </div>
+
+          <Input
+            label={<>Type <span className="font-semibold">DEACTIVATE</span> to confirm</>}
+            value={form.confirm_text}
+            onChange={handleChange('confirm_text')}
+            placeholder="DEACTIVATE"
+            required
+          />
+
+          <div className="flex gap-3 pt-1">
+            <Button variant="secondary" onClick={onClose} fullWidth type="button">Cancel</Button>
+            <Button type="submit" variant="danger" fullWidth disabled={saving || !confirmed}>
+              {saving ? 'Deactivating...' : 'Deactivate my account'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function Profile() {
-  const { user, setUser, loading, login } = useAuth()
+  const { user, setUser, loading, login, logout } = useAuth()
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const sessionsRef = useRef(null)
+  const [highlightSessions, setHighlightSessions] = useState(false)
+
+  useEffect(() => {
+    if (location.hash === '#sessions' && sessionsRef.current) {
+      sessionsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setHighlightSessions(true)
+      const timeout = setTimeout(() => setHighlightSessions(false), 2000)
+      return () => clearTimeout(timeout)
+    }
+  }, [location.hash])
 
   if (loading) return <PageLoader />
 
@@ -224,7 +324,28 @@ export default function Profile() {
           </Button>
         </Card>
 
-        <SessionsCard />
+        <div
+          id="sessions"
+          ref={sessionsRef}
+          className={`rounded-xl transition-shadow duration-500 ${
+            highlightSessions ? 'ring-2 ring-teal ring-offset-2' : ''
+          }`}
+        >
+          <SessionsCard />
+        </div>
+
+        <Card className="p-6 flex items-center justify-between border-l-4 border-l-coral">
+          <div>
+            <h2 className="font-display text-base font-semibold text-ink">Deactivate account</h2>
+            <p className="text-sm text-ink-light mt-0.5">
+              Logs you out everywhere. Your data is kept for 30 days before permanent deletion.
+            </p>
+          </div>
+          <Button variant="danger" onClick={() => setShowDeactivateModal(true)}>
+            <AlertTriangle size={16} />
+            Deactivate
+          </Button>
+        </Card>
 
         {showPasswordModal && (
           <ChangePasswordModal
@@ -233,6 +354,18 @@ export default function Profile() {
               // Backend issues a fresh token (old one is invalidated on other
               // sessions) - re-store it so this session keeps working seamlessly.
               login(data.access_token, data.user)
+            }}
+          />
+        )}
+
+        {showDeactivateModal && (
+          <DeactivateAccountModal
+            onClose={() => setShowDeactivateModal(false)}
+            onDeactivated={() => {
+              // The account is logged out server-side already (every session
+              // revoked) - clear the local token too and send them to login.
+              logout()
+              navigate('/login')
             }}
           />
         )}

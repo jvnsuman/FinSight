@@ -8,6 +8,8 @@ from datetime import date
 from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
+from backend.schemas.transaction import TransactionResponse
+
 
 class BudgetCreate(BaseModel):
     category_id: Optional[int] = Field(
@@ -54,3 +56,13 @@ class BudgetResponse(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class BudgetDetailResponse(BudgetResponse):
+    """
+    Same fields as BudgetResponse, plus the actual list of expense
+    transactions that make up spent_amount this month - used by the "click a
+    budget to see its breakdown" popup on the frontend. Ordered most recent
+    first, same as the main transactions list.
+    """
+    transactions: list[TransactionResponse] = Field(default_factory=list)

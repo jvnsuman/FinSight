@@ -272,6 +272,8 @@ def get_or_update_health_cache(db: Session, user_id: int, force_refresh: bool = 
     
     # Refresh if no cache or older than 24h or forced
     if force_refresh or not cache or not cache.updated_at or (datetime.utcnow() - cache.updated_at).total_seconds() > 86400:
+        old_score = cache.score if cache else None
+
         metrics = calculate_raw_metrics(db, user_id)
         score = compute_overall_score(metrics)
         insights = generate_ai_insights(metrics, score)
@@ -291,7 +293,12 @@ def get_or_update_health_cache(db: Session, user_id: int, force_refresh: bool = 
             
         db.commit()
         db.refresh(cache)
-        
+
+        # Local import to avoid a circular import at module load time (same
+        # convention as transaction_service -> savings_service).
+        from backend.services.alert_service import check_health_score_status
+        check_health_score_status(db, user_id, old_score, score, _get_health_category(score))
+
     return cache
 
 def simulate_score(db: Session, user_id: int, overrides: Dict[str, Any], skip_ai: bool = False) -> Dict[str, Any]:

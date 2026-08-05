@@ -219,7 +219,29 @@ def get_budget_or_404(db: Session, user_id: int, budget_id: int) -> Budget:
 
 def get_budget_detail(db: Session, user_id: int, budget_id: int) -> dict:
     budget = get_budget_or_404(db, user_id, budget_id)
-    return _build_budget_response_data(db, budget)
+    data = _build_budget_response_data(db, budget)
+    data["transactions"] = _get_budget_transactions(db, user_id, budget.category_id, budget.month)
+    return data
+
+
+def _get_budget_transactions(db: Session, user_id: int, category_id: int | None, month: date) -> list[Transaction]:
+    """
+    Returns the expense transactions that make up a budget's spent_amount -
+    same filter logic as _calculate_spent_amount, but returning the rows
+    themselves rather than a sum, for the budget detail breakdown popup.
+    """
+    first_day, last_day = _month_bounds(month)
+
+    query = db.query(Transaction).filter(
+        Transaction.user_id == user_id,
+        Transaction.transaction_type == "expense",
+        Transaction.transaction_date >= first_day,
+        Transaction.transaction_date <= last_day,
+    )
+    if category_id is not None:
+        query = query.filter(Transaction.category_id == category_id)
+
+    return query.order_by(Transaction.transaction_date.desc(), Transaction.transaction_id.desc()).all()
 
 
 def update_budget(db: Session, user_id: int, budget_id: int, updates: BudgetUpdate) -> dict:

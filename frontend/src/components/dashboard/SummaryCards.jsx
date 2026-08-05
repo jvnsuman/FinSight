@@ -39,7 +39,7 @@ export default function SummaryCards({ summary }) {
         accent={{ bg: 'bg-coral-light', text: 'text-coral' }}
       />
       <SummaryCard
-        label="Total Savings"
+        label="Monthly Savings"
         value={formatCurrency(summary.total_savings)}
         icon={PiggyBank}
         accent={{ bg: 'bg-teal/10', text: 'text-teal' }}

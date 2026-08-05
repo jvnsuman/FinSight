@@ -31,8 +31,6 @@ FinSight is organized into three milestones, each broken into parts:
 | 3 | Financial Goal Planning | ✅ Active |
 | 4 | Portfolio Analytics Dashboard | ✅ Active |
 | Extra | Simulated Trading Wallet | ✅ Active |
-| Extra | Financial Health Score | ✅ Active |
-| Extra | AI Financial Assistant | ✅ Active |
 
 **Milestone 3 - Alerts & Account Security**
 | Part | Feature | Status |
@@ -41,6 +39,8 @@ FinSight is organized into three milestones, each broken into parts:
 | 2 | Session Management (per-device tracking & revocation) | ✅ Active |
 | 3 | Scheduled Alerts (APScheduler) | ✅ Active |
 | 4 | Account Deactivation & Cleanup | ✅ Active |
+| Extra | Financial Health Score | ✅ Active |
+| Extra | AI Financial Assistant | ✅ Active |
 
 ---
 

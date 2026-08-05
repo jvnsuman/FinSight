@@ -68,6 +68,10 @@ class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=72, description="8-72 characters")
 
+class DeactivateAccountRequest(BaseModel):
+    current_password: str
+    reason: Optional[str] = Field(default=None, max_length=500, description="Optional - shown back in the confirmation email if given")
+
 # ------------ Response schemas --------------
 class UserResponse(BaseModel):
     user_id : int
@@ -93,4 +97,9 @@ class TokenResponse(BaseModel):
     access_token : str
     token_type : str = "bearer"
     user : UserResponse
+
+class DeactivateAccountResponse(BaseModel):
+    message: str
+    deletion_requested_at: datetime
+    permanent_deletion_date: datetime
 

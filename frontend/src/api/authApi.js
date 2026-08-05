@@ -31,3 +31,6 @@ export const changePassword = (current_password, new_password) =>
 export const getSessions = () => axiosClient.get('/auth/sessions')
 
 export const revokeSession = (sessionId) => axiosClient.delete(`/auth/sessions/${sessionId}`)
+
+export const deactivateAccount = (current_password, reason) =>
+  axiosClient.delete('/auth/me', { data: { current_password, reason: reason || undefined } })

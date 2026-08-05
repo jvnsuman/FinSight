@@ -139,15 +139,22 @@ export default function Accounts() {
                   <div className="w-10 h-10 rounded-lg bg-teal/10 flex items-center justify-center">
                     <Icon size={18} className="text-teal" />
                   </div>
-                  <button
-                    onClick={() => handleDelete(acc.account_id)}
-                    className="text-ink-light hover:text-coral p-1"
-                    aria-label="Remove account"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {!acc.is_default && (
+                    <button
+                      onClick={() => handleDelete(acc.account_id)}
+                      className="text-ink-light hover:text-coral p-1"
+                      aria-label="Remove account"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm font-medium text-ink">{acc.account_name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-ink">{acc.account_name}</p>
+                  {acc.is_default && (
+                    <span className="text-[10px] font-medium text-teal bg-teal/10 px-1.5 py-0.5 rounded">Default</span>
+                  )}
+                </div>
                 <p className="text-xs text-ink-light mb-2">{acc.bank_name || acc.account_type}</p>
                 <p className="font-display text-xl font-semibold text-ink tabular-nums">{formatCurrency(acc.balance)}</p>
               </Card>

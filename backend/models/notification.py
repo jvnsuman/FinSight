@@ -28,6 +28,11 @@ class Notification(Base):
 
     is_read = Column(Boolean, nullable=False, default=False, index=True)
 
+    # Optional frontend route to open when the notification is clicked, e.g.
+    # "/financial-health" or "/profile#sessions". Nullable - most system
+    # notifications don't need a click-through action.
+    action_url = Column(String(255), nullable=True)
+
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     user = relationship("User", back_populates="notifications")

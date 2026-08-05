@@ -14,13 +14,18 @@ from backend.core.security import (
 from backend.models.user import User
 from backend.schemas.user import UserRegister
 from backend.services.category_service import seed_default_categories
+from backend.services.account_service import ensure_default_cash_account
 from backend.services.session_service import revoke_all_sessions
+from backend.services.email_service import send_password_changed_email, send_account_deactivated_email
+
+DEACTIVATION_GRACE_PERIOD_DAYS = 30  # kept in sync with account_cleanup_service.DEFAULT_GRACE_PERIOD_DAYS
 
 def register_user(db: Session, user_data: UserRegister) -> User:
     """
     Create a new user with a hashed password and an email verification token.
     The user is NOT verified yet - is_verified stays False until they click the link.
-    Also seeds the default expense/income categories for the new user.
+    Also seeds the default expense/income categories and the default Cash
+    Amount wallet for the new user.
     Raise value error if email is taken.
     """
     existing = db.query(User).filter(User.email == user_data.email).first()
@@ -45,6 +50,7 @@ def register_user(db: Session, user_data: UserRegister) -> User:
     db.refresh(new_user)
 
     seed_default_categories(db, new_user.user_id)
+    ensure_default_cash_account(db, new_user.user_id)
     return new_user
 
 def verify_user_email(db: Session, token: str) -> User:
@@ -99,7 +105,10 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.password_hash):
         raise ValueError("INVALID_CREDENTIALS")
-    
+
+    if not user.is_active:
+        raise ValueError("ACCOUNT_DEACTIVATED")
+
     if not user.is_verified:
         raise ValueError("EMAIL_NOT_VERIFIED")
 
@@ -152,6 +161,12 @@ def change_password(db: Session, user: User, current_password: str, new_password
     user.token_version += 1
     db.commit()
     db.refresh(user)
+
+    try:
+        send_password_changed_email(user.email, user.name)
+    except Exception:
+        pass  # non-fatal - the password change itself already succeeded
+
     return user
 
 
@@ -184,6 +199,58 @@ def reset_password(db: Session, token: str, new_password: str) -> User:
     db.refresh(user)
 
     revoke_all_sessions(db, user.user_id)  # log out every device - this is a full account takeover-recovery action
+
+    try:
+        send_password_changed_email(user.email, user.name)
+    except Exception:
+        pass  # non-fatal - the password reset itself already succeeded
+
+    return user
+
+
+def deactivate_account(db: Session, user: User, current_password: str, reason: str | None = None) -> User:
+    """
+    Soft-deletes the logged-in user's own account: verifies their current
+    password first (this is the most destructive self-service action in the
+    app, so it gets the same confirmation as change_password), then sets
+    is_active=False and stamps deletion_requested_at to now.
+
+    Also bumps token_version and revokes every active session, so the
+    account can't keep being used anywhere the moment this commits - matches
+    the same "log out everywhere" behavior as reset_password.
+
+    The account is NOT deleted yet. account_cleanup_service.
+    purge_expired_deleted_accounts (run via backend/scripts/
+    purge_deleted_accounts.py, manually or on a schedule) permanently
+    removes it once DEACTIVATION_GRACE_PERIOD_DAYS has passed since
+    deletion_requested_at - logging back in during the grace period doesn't
+    currently auto-reactivate it (that'd need a dedicated reactivate flow;
+    out of scope here since get_current_user and authenticate_user both
+    reject a deactivated account before it could reach one).
+
+    Raises ValueError if the current password is wrong, or if the account is
+    already deactivated.
+    """
+    if not user.is_active:
+        raise ValueError("This account is already deactivated.")
+
+    if not verify_password(current_password, user.password_hash):
+        raise ValueError("Current password is incorrect")
+
+    user.is_active = False
+    user.deletion_requested_at = datetime.now(timezone.utc)
+    user.token_version += 1  # belt-and-suspenders alongside is_active check in get_current_user
+
+    db.commit()
+    db.refresh(user)
+
+    revoke_all_sessions(db, user.user_id)
+
+    purge_date = user.deletion_requested_at + timedelta(days=DEACTIVATION_GRACE_PERIOD_DAYS)
+    try:
+        send_account_deactivated_email(user.email, user.name, reason, purge_date)
+    except Exception:
+        pass  # non-fatal - the deactivation itself already succeeded
 
     return user
 

@@ -1,19 +1,33 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, X, Trash2, AlertTriangle } from 'lucide-react'
+import { Plus, X, Trash2, AlertTriangle, ChevronLeft, ChevronRight, Receipt } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
 import { Card, ErrorBanner } from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { getBudgets, createBudget, deleteBudget } from '../api/budgetsApi'
+import { getBudgets, getBudget, createBudget, deleteBudget } from '../api/budgetsApi'
 import { getCategories } from '../api/categoriesApi'
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount)
 }
 
+function formatDate(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+}
+
 function currentMonthValue() {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+function monthLabel(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+}
+
+function shiftMonth(dateStr, delta) {
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setMonth(d.getMonth() + delta)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 }
 
 function BudgetFormModal({ categories, defaultMonth, onClose, onCreated }) {
@@ -135,12 +149,101 @@ function BudgetBar({ budget }) {
   )
 }
 
+function BudgetDetailModal({ budgetId, onClose }) {
+  const [detail, setDetail] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+    getBudget(budgetId)
+      .then((res) => { if (!cancelled) setDetail(res.data) })
+      .catch(() => { if (!cancelled) setError('Could not load budget details.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [budgetId])
+
+  return (
+    <div className="fixed inset-0 bg-ink/40 flex items-center justify-center px-4 z-50">
+      <div className="bg-white rounded-xl shadow-soft w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            {detail?.category_name || 'Overall budget'}
+          </h2>
+          <button onClick={onClose} className="text-ink-light hover:text-ink"><X size={20} /></button>
+        </div>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <div key={i} className="h-12 rounded-lg bg-slate-100 animate-pulse" />)}
+          </div>
+        ) : error ? (
+          <ErrorBanner message={error} />
+        ) : (
+          <>
+            <div className="bg-surface rounded-lg p-4 mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-ink-light">
+                  {formatCurrency(detail.spent_amount)} of {formatCurrency(detail.amount)}
+                </span>
+                <span className={`text-sm font-semibold ${detail.is_exceeded ? 'text-coral' : 'text-ink'}`}>
+                  {detail.utilization_percent}%
+                </span>
+              </div>
+              <BudgetBar budget={detail} />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-ink-light">
+                  {monthLabel(detail.month)}
+                </span>
+                <span className="text-xs text-ink-light">
+                  {formatCurrency(Math.max(detail.remaining_amount, 0))} remaining
+                </span>
+              </div>
+            </div>
+
+            <h3 className="text-sm font-semibold text-ink mb-3">
+              Transactions ({detail.transactions.length})
+            </h3>
+            {detail.transactions.length === 0 ? (
+              <p className="text-sm text-ink-light text-center py-6">
+                No expenses recorded against this budget yet.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {detail.transactions.map((t) => (
+                  <div key={t.transaction_id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-coral-light flex items-center justify-center shrink-0">
+                        <Receipt size={14} className="text-coral" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-ink truncate">{t.description || t.category?.category_name || 'Expense'}</p>
+                        <p className="text-xs text-ink-light">{formatDate(t.transaction_date)}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-ink tabular-nums shrink-0 ml-3">
+                      {formatCurrency(t.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Budgets() {
-  const [month] = useState(currentMonthValue())
+  const [month, setMonth] = useState(currentMonthValue())
   const [budgets, setBudgets] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [selectedBudgetId, setSelectedBudgetId] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -152,7 +255,8 @@ export default function Budgets() {
 
   useEffect(() => { load() }, [load])
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, e) => {
+    e.stopPropagation()
     if (!confirm('Delete this budget?')) return
     await deleteBudget(id)
     load()
@@ -163,11 +267,29 @@ export default function Budgets() {
       <div className="flex items-center justify-between mb-7">
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">Budgets</h1>
-          <p className="text-sm text-ink-light mt-0.5">
-            {new Date(month + 'T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
-          </p>
+          <p className="text-sm text-ink-light mt-0.5">See how much you've set aside, month by month.</p>
         </div>
         <Button onClick={() => setShowModal(true)}><Plus size={16} /> Set a budget</Button>
+      </div>
+
+      <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 px-1.5 py-1.5 shadow-card w-fit mb-6">
+        <button
+          onClick={() => setMonth((m) => shiftMonth(m, -1))}
+          className="p-1.5 rounded-md hover:bg-slate-50 text-ink-light"
+          aria-label="Previous month"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <span className="text-sm font-medium text-ink px-2 min-w-[140px] text-center">
+          {monthLabel(month)}
+        </span>
+        <button
+          onClick={() => setMonth((m) => shiftMonth(m, 1))}
+          className="p-1.5 rounded-md hover:bg-slate-50 text-ink-light"
+          aria-label="Next month"
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
 
       {loading ? (
@@ -176,13 +298,17 @@ export default function Budgets() {
         </div>
       ) : budgets.length === 0 ? (
         <Card className="p-10 text-center">
-          <p className="text-ink-light text-sm mb-4">No budgets set for this month yet.</p>
+          <p className="text-ink-light text-sm mb-4">No budgets set for {monthLabel(month)} yet.</p>
           <Button onClick={() => setShowModal(true)} className="mx-auto"><Plus size={16} /> Set a budget</Button>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {budgets.map((b) => (
-            <Card key={b.budget_id} className="p-5">
+            <Card
+              key={b.budget_id}
+              className="p-5 cursor-pointer hover:shadow-soft transition-shadow"
+              onClick={() => setSelectedBudgetId(b.budget_id)}
+            >
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-sm font-semibold text-ink">{b.category_name || 'Overall budget'}</p>
@@ -192,7 +318,7 @@ export default function Budgets() {
                 </div>
                 <div className="flex items-center gap-2">
                   {b.is_exceeded && <AlertTriangle size={16} className="text-coral" />}
-                  <button onClick={() => handleDelete(b.budget_id)} className="text-ink-light hover:text-coral p-1">
+                  <button onClick={(e) => handleDelete(b.budget_id, e)} className="text-ink-light hover:text-coral p-1">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -217,6 +343,13 @@ export default function Budgets() {
           defaultMonth={month}
           onClose={() => setShowModal(false)}
           onCreated={load}
+        />
+      )}
+
+      {selectedBudgetId && (
+        <BudgetDetailModal
+          budgetId={selectedBudgetId}
+          onClose={() => setSelectedBudgetId(null)}
         />
       )}
     </AppShell>

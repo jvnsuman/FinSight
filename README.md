@@ -73,14 +73,17 @@ FinSight is organized into three milestones, each broken into parts:
 | Tool | Purpose |
 |------|---------|
 | FastAPI | Core web framework |
+| Uvicorn (standard) | ASGI server |
 | SQLAlchemy + Alembic | ORM and database migrations |
 | PostgreSQL (`psycopg2-binary`) | Database |
 | passlib + bcrypt | Password hashing |
 | python-jose / joserfc | JWT authentication (carries a `jti`/session claim) |
 | pydantic-settings | Configuration management |
+| email-validator | Email format validation on registration/auth |
 | APScheduler | Scheduled background jobs (price-move checks, goal deadlines, monthly summaries, account cleanup) |
 | httpx | Outbound HTTP (market data calls) |
 | pandas + openpyxl | Parsing CSV/Excel bank statements for import |
+| google-generativeai | Powers the AI Financial Assistant and Financial Health coach chat |
 
 **Frontend**
 | Tool | Purpose |
@@ -92,6 +95,9 @@ FinSight is organized into three milestones, each broken into parts:
 | Recharts | Charts & data visualization |
 | Tailwind CSS | Styling |
 | lucide-react | Icon set |
+| react-markdown + remark-gfm | Renders the AI Assistant's chat responses as formatted markdown |
+
+> Monthly Report's PDF export uses the browser's native `window.print()` (print-to-PDF), not a dedicated PDF library.
 
 **DevOps**
 | Tool | Purpose |

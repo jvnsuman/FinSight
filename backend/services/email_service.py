@@ -182,3 +182,132 @@ def send_login_alert_email(
         server.starttls()
         server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
         server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())
+
+
+def send_password_changed_email(to_email: str, user_name: str) -> None:
+    """
+    Sends a confirmation email whenever the account's password is changed -
+    covers both the logged-in "change password" flow (auth_service.
+    change_password) and the "forgot password" reset flow (auth_service.
+    reset_password), since either one leaves the account with a new password
+    and the owner should know either way.
+
+    Deliberately doesn't include a reset link here (unlike the login alert):
+    if this WASN'T the account owner, the safest next step is contacting
+    support, since a same-flow reset link would just let whoever changed it
+    lock the real owner out again. Raises smtplib exception on failure - both
+    callers treat this as non-fatal and swallow it, same as the other
+    account emails in this module.
+    """
+    subject = "Your FinSight password was changed"
+    body_text = (
+        f"Hi {user_name},\n\n"
+        f"This is a confirmation that the password for your FinSight account was just changed.\n\n"
+        f"If you made this change, no action is needed.\n\n"
+        f"If you didn't change your password, your account may be compromised - "
+        f"please contact support right away.\n\n"
+    )
+    body_html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #1E293B;">
+        <h2 style="color: #028090;">Your FinSight password was changed</h2>
+        <p>Hi {user_name},</p>
+        <p>This is a confirmation that the password for your FinSight account was just changed.</p>
+        <p>If you made this change, no action is needed.</p>
+        <p style="color:#E0574B;">If you didn't change your password, your account may be compromised - please contact support right away.</p>
+        <p style="color:#64748B; font-size:13px;">
+          You can review your account's active sessions any time from your
+          Profile page on the FinSight app - just open Profile → Active sessions.
+        </p>
+      </body>
+    </html>
+    """
+
+    message = MIMEMultipart("alternative")
+    message["Subject"] = subject
+    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
+    message["To"] = to_email
+    message.attach(MIMEText(body_text, "plain"))
+    message.attach(MIMEText(body_html, "html"))
+
+    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        server.starttls()
+        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())
+
+
+def send_account_deactivated_email(to_email: str, user_name: str, reason: str | None, purge_date) -> None:
+    """
+    Sends a detailed confirmation email when a user deactivates their own
+    FinSight account (auth_service.deactivate_account). Unlike the shorter
+    security emails in this module, this one is deliberately thorough since
+    it's explaining a multi-step, delayed-deletion process the user needs to
+    actually understand: what just happened, what's reversible and until
+    when, what happens automatically after that, and how to get help if this
+    wasn't intentional.
+
+    purge_date is a datetime - the point after which the account and all its
+    data (accounts, transactions, budgets, investments, goals, trades,
+    sessions) are permanently and irreversibly deleted by
+    account_cleanup_service.purge_expired_deleted_accounts.
+    """
+    purge_date_str = purge_date.strftime("%d %B %Y")
+    reason_line_text = f"Reason given: {reason}\n\n" if reason else ""
+    reason_line_html = f'<p style="color:#64748B;"><em>Reason given: {reason}</em></p>' if reason else ""
+
+    subject = "Your FinSight account has been deactivated"
+    body_text = (
+        f"Hi {user_name},\n\n"
+        f"We're confirming that your FinSight account was deactivated just now.\n\n"
+        f"{reason_line_text}"
+        f"What this means right now:\n"
+        f"  - You've been logged out of every device, and your account can no longer be used to log in.\n"
+        f"  - Nothing has been deleted yet. All of your data - accounts, transactions, budgets, "
+        f"investments, goals, and trade history - is untouched and kept exactly as it was.\n\n"
+        f"What happens next:\n"
+        f"  - Your account will be permanently deleted on {purge_date_str} (30 days from today), "
+        f"along with all the data listed above. This cannot be undone once it happens.\n"
+        f"  - Until then, this is a grace period. If you'd like to keep your account, "
+        f"contact support before {purge_date_str} and we can help you get back in.\n\n"
+        f"If you didn't request this and believe your account was deactivated without your "
+        f"permission, please contact support immediately so we can look into it before "
+        f"the permanent deletion date.\n\n"
+        f"We're sorry to see you go.\n"
+    )
+    body_html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #1E293B;">
+        <h2 style="color: #028090;">Your FinSight account has been deactivated</h2>
+        <p>Hi {user_name},</p>
+        <p>We're confirming that your FinSight account was deactivated just now.</p>
+        {reason_line_html}
+        <h3 style="color:#0B2E33; font-size:15px;">What this means right now</h3>
+        <ul>
+          <li>You've been logged out of every device, and your account can no longer be used to log in.</li>
+          <li>Nothing has been deleted yet. All of your data - accounts, transactions, budgets, investments, goals, and trade history - is untouched and kept exactly as it was.</li>
+        </ul>
+        <h3 style="color:#0B2E33; font-size:15px;">What happens next</h3>
+        <ul>
+          <li>Your account will be <strong>permanently deleted on {purge_date_str}</strong> (30 days from today), along with all the data listed above. This cannot be undone once it happens.</li>
+          <li>Until then, this is a grace period. If you'd like to keep your account, contact support before {purge_date_str} and we can help you get back in.</li>
+        </ul>
+        <p style="color:#E0574B;">
+          If you didn't request this and believe your account was deactivated without your permission,
+          please contact support immediately so we can look into it before the permanent deletion date.
+        </p>
+        <p style="color:#64748B; font-size:13px;">We're sorry to see you go.</p>
+      </body>
+    </html>
+    """
+
+    message = MIMEMultipart("alternative")
+    message["Subject"] = subject
+    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
+    message["To"] = to_email
+    message.attach(MIMEText(body_text, "plain"))
+    message.attach(MIMEText(body_html, "html"))
+
+    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        server.starttls()
+        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())

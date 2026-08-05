@@ -6,13 +6,13 @@ All of these are computed live from Parts 1-3 data - nothing stored here.
 
 from datetime import date, datetime
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SummaryCards(BaseModel):
     total_income: float
     total_expenses: float
-    total_savings: float          # total_income - total_expenses
+    total_savings: float          # THIS MONTH's net savings: total_income - total_expenses. Not the overall pool - see DashboardResponse.savings_pool for that.
     budget_utilization_percent: float   # overall budget spent / overall budget amount, 0 if no overall budget set
 
 
@@ -47,3 +47,7 @@ class DashboardResponse(BaseModel):
     expense_breakdown: list[ExpenseBreakdownItem]
     monthly_trend: list[TrendPoint]
     recent_transactions: list[RecentTransactionItem]
+    savings_pool: float = Field(
+        default=0.0,
+        description="The user's persistent, cumulative savings pool - separate from summary.total_savings, which is just this month's income minus expenses.",
+    )

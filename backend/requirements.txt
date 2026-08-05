@@ -15,3 +15,4 @@ httpx
 pandas
 openpyxl
 google-generativeai
+yfinance

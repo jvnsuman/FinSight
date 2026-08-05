@@ -143,7 +143,7 @@ function ImportModal({ accounts, categories, onClose, onImported }) {
             </div>
 
             <div className="border-t border-slate-100 pt-4">
-              <p className="text-xs font-medium text-ink mb-2">Column mapping — must match your file's header row exactly</p>
+              <p className="text-xs font-medium text-ink mb-2">Column mapping â€” must match your file's header row exactly</p>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <Input label="Date column" value={mapping.date_column} onChange={(e) => setMapping({ ...mapping, date_column: e.target.value })} required />
                 <Input label="Description column" value={mapping.description_column} onChange={(e) => setMapping({ ...mapping, description_column: e.target.value })} required />
@@ -223,7 +223,7 @@ function ImportModal({ accounts, categories, onClose, onImported }) {
                           onChange={(e) => updateRow(row.row_number, 'category_id', e.target.value ? Number(e.target.value) : null)}
                           className="text-xs border border-slate-200 rounded px-1 py-0.5 w-full"
                         >
-                          <option value="">—</option>
+                          <option value="">â€”</option>
                           {categories.filter((c) => c.category_type === row.transaction_type).map((c) => (
                             <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
                           ))}
@@ -482,6 +482,25 @@ function TransactionFormModal({ accounts, categories, onClose, onCreated, templa
             </div>
           )}
 
+          {form.transaction_type === 'expense' && (
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">Payment mode (optional)</label>
+              <select
+                value={form.payment_mode}
+                onChange={(e) => setForm({ ...form, payment_mode: e.target.value })}
+                className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal"
+              >
+                <option value="">None</option>
+                <option value="UPI">UPI</option>
+                <option value="Cash">Cash</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Net Banking">Net Banking</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          )}
+
           {form.transaction_type === 'transfer' && (
             <div>
               <label className="block text-sm font-medium text-ink mb-1.5">Payment mode (optional)</label>
@@ -520,6 +539,7 @@ function TransactionFormModal({ accounts, categories, onClose, onCreated, templa
           <Input
             label="Date"
             type="date"
+            max={new Date().toISOString().slice(0, 10)}
             value={form.transaction_date}
             onChange={(e) => setForm({ ...form, transaction_date: e.target.value })}
             required
@@ -633,7 +653,7 @@ export default function Transactions() {
                   })}
                   className="px-3 py-1.5 rounded-full text-xs font-medium bg-surface text-ink border border-slate-200 hover:border-teal hover:text-teal transition-colors"
                 >
-                  {t.description} · {formatCurrency(t.amount)}
+                  {t.description} Â· {formatCurrency(t.amount)}
                 </button>
               ))}
             </div>
@@ -669,7 +689,7 @@ export default function Transactions() {
                     <div>
                       <p className="text-sm font-medium text-ink">{t.description || t.category?.category_name || 'Transaction'}</p>
                       <p className="text-xs text-ink-light">
-                        {t.category?.category_name || 'Uncategorized'} · {t.payment_mode || '—'} ·{' '}
+                        {t.category?.category_name || 'Uncategorized'} Â· {t.payment_mode || 'â€”'} Â·{' '}
                         {new Date(t.transaction_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     </div>

@@ -34,18 +34,24 @@ def create_notification(
     title: str,
     message: str,
     type: str = "system",
+    action_url: str | None = None,
 ) -> Notification:
     """
     Creates and persists a single in-app notification for a user.
     Call this from anywhere in the codebase - event hooks in other services,
     or scheduled jobs - whenever something happens that the user should be
     told about.
+
+    action_url is an optional frontend route (e.g. "/financial-health") that
+    the notification should open when clicked - leave it None for
+    notifications with nothing specific to link to.
     """
     notification = Notification(
         user_id=user_id,
         title=title,
         message=message,
         type=type,
+        action_url=action_url,
     )
     db.add(notification)
     db.commit()

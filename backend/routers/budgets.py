@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from backend.core.dependencies import get_current_user
 from backend.database import get_db
 from backend.models.user import User
-from backend.schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse
+from backend.schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse, BudgetDetailResponse
 from backend.services.budget_service import (
     create_budget,
     get_user_budgets,
@@ -78,12 +78,17 @@ def list_budgets(
     return get_user_budgets(db, current_user.user_id, month)
 
 
-@router.get("/{budget_id}", response_model=BudgetResponse)
+@router.get("/{budget_id}", response_model=BudgetDetailResponse)
 def get_budget(
     budget_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    Get a single budget's detail, including the live utilization fields and
+    the actual expense transactions that make up spent_amount this month -
+    used for the "click a budget" breakdown view.
+    """
     try:
         return get_budget_detail(db, current_user.user_id, budget_id)
     except ValueError as e:

@@ -2,6 +2,8 @@
 API routes: register, verify email, resend verification, login, get/update profile.
 """
 
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -21,6 +23,8 @@ from backend.schemas.user import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
     ChangePasswordRequest,
+    DeactivateAccountRequest,
+    DeactivateAccountResponse,
 )
 from backend.services.auth_service import (
     register_user,
@@ -31,6 +35,8 @@ from backend.services.auth_service import (
     request_password_reset,
     reset_password,
     change_password,
+    deactivate_account,
+    DEACTIVATION_GRACE_PERIOD_DAYS,
 )
 from backend.services.email_service import send_verification_email, send_password_reset_email
 from backend.services.session_service import create_session, list_sessions, revoke_session
@@ -122,6 +128,11 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Please verify your email before logging in. "
                        "Use /auth/resend-verification if you need a new link.",
+            )
+        if str(e) == "ACCOUNT_DEACTIVATED":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account has been deactivated. Contact support if you'd like to reactivate it.",
             )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -215,6 +226,40 @@ def change_password_endpoint(
 
     access_token = create_token_for_user(user, current_session_id)
     return TokenResponse(access_token=access_token, user=user)
+
+
+@router.delete("/me", response_model=DeactivateAccountResponse)
+def deactivate_account_endpoint(
+    payload: DeactivateAccountRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Deactivate (soft-delete) the logged-in user's own account. Requires the
+    current password as confirmation, since this is the most destructive
+    self-service action in the app.
+
+    Immediately logs the account out of every device. The account and all
+    its data are kept for a 30-day grace period before being permanently
+    deleted - contact support during that window to reactivate. A detailed
+    confirmation email is sent explaining exactly what happened and what to
+    expect next.
+    """
+    try:
+        user = deactivate_account(db, current_user, payload.current_password, payload.reason)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    purge_date = user.deletion_requested_at + timedelta(days=DEACTIVATION_GRACE_PERIOD_DAYS)
+    return DeactivateAccountResponse(
+        message=(
+            f"Your account has been deactivated and you've been logged out everywhere. "
+            f"It will be permanently deleted on {purge_date.strftime('%d %B %Y')} unless you contact "
+            f"support before then. A confirmation email has been sent with the full details."
+        ),
+        deletion_requested_at=user.deletion_requested_at,
+        permanent_deletion_date=purge_date,
+    )
 
 
 @router.get("/sessions", response_model=SessionListResponse)

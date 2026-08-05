@@ -17,3 +17,5 @@ export const updateInvestment = (investmentId, data) => axiosClient.put(`/invest
 export const deleteInvestment = (investmentId) => axiosClient.delete(`/investments/${investmentId}`)
 
 export const getPortfolioSummary = () => axiosClient.get('/investments/summary/allocation')
+
+export const getLivePrice = (symbol) => axiosClient.get(`/investments/price/${symbol}`)

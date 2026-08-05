@@ -70,6 +70,19 @@ def get_portfolio_summary(
     return analytics_service.compute_portfolio_summary(investments, prices)
 
 
+@router.get("/price/{symbol}")
+def get_live_price(
+    symbol: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Fetch the live or cached price for a single symbol (e.g. for dynamic UI updates)."""
+    price_cache = market_data_service.get_price(db, symbol)
+    if not price_cache:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No price found for {symbol}")
+    return {"symbol": symbol, "price": float(price_cache.price)}
+
+
 @router.get("/{investment_id}", response_model=InvestmentResponse)
 def get_investment(
     investment_id: int,

@@ -16,6 +16,7 @@ import Investments from './pages/Investments'
 import Goals from './pages/Goals'
 import PortfolioDashboard from './pages/PortfolioDashboard'
 import MonthlyReport from './pages/MonthlyReport' 
+import LandingPage from './pages/LandingPage'
 
 import Assistant from './pages/Assistant'
 import FinancialHealth from './pages/FinancialHealth'
@@ -45,9 +46,9 @@ export default function App() {
           <Route path="/financial-health" element={<ProtectedRoute><FinancialHealth /></ProtectedRoute>} />
           <Route path="/monthly-report" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
           
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Default routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

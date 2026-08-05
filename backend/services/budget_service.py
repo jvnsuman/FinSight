@@ -264,3 +264,23 @@ def delete_budget(db: Session, user_id: int, budget_id: int) -> None:
     budget = get_budget_or_404(db, user_id, budget_id)
     db.delete(budget)
     db.commit()
+
+def get_locked_budget_amount(db: Session, user_id: int, month: date) -> Decimal:
+    """
+    Calculate funds locked by budgets (unspent budgeted amount) for a given month.
+    Returns the maximum of (Overall Budget Remaining) vs (Sum of Category Budgets Remaining)
+    to avoid double counting when both exist.
+    """
+    budgets = get_user_budgets(db, user_id, month)
+    overall_remaining = Decimal("0")
+    category_remaining_sum = Decimal("0")
+
+    for b in budgets:
+        rem = Decimal(str(b["remaining_amount"]))
+        if rem > 0:
+            if b["category_id"] is None:
+                overall_remaining = rem
+            else:
+                category_remaining_sum += rem
+
+    return max(overall_remaining, category_remaining_sum)

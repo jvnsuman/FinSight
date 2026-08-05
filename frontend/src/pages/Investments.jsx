@@ -10,6 +10,7 @@ import {
   updateInvestment,
   deleteInvestment,
   getPortfolioSummary,
+  getLivePrice,
 } from '../api/investmentsApi'
 import { getWallet, depositFunds, buyHolding, sellHolding } from '../api/tradingApi'
 
@@ -18,7 +19,7 @@ function formatCurrency(amount) {
 }
 
 function formatPercent(pct) {
-  if (pct === null || pct === undefined) return '—'
+  if (pct === null || pct === undefined) return 'â€”'
   const sign = pct > 0 ? '+' : ''
   return `${sign}${pct.toFixed(2)}%`
 }
@@ -54,6 +55,28 @@ function InvestmentFormModal({ existing, onClose, onSaved }) {
   })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [livePrice, setLivePrice] = useState(null)
+  const [fetchingPrice, setFetchingPrice] = useState(false)
+
+  // Debounced live price fetcher
+  useEffect(() => {
+    if (!form.symbol) {
+      setLivePrice(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      setFetchingPrice(true)
+      try {
+        const res = await getLivePrice(form.symbol)
+        setLivePrice(res.data.price)
+      } catch (err) {
+        setLivePrice(null)
+      } finally {
+        setFetchingPrice(false)
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [form.symbol])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -117,8 +140,13 @@ function InvestmentFormModal({ existing, onClose, onSaved }) {
             label="Symbol / ticker (optional)"
             value={form.symbol}
             onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-            placeholder="HDFCBANK.BSE"
+            placeholder="e.g. TCS.NS or RELIANCE.BO"
           />
+          {form.symbol && (
+            <p className="text-xs text-ink-light -mt-2">
+              {fetchingPrice ? 'Fetching live price...' : livePrice ? `Current market price: ${formatCurrency(livePrice)}` : 'Could not fetch live price for this symbol.'}
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Quantity"
@@ -195,7 +223,7 @@ function DepositModal({ onClose, onSaved }) {
           <button onClick={onClose} className="text-ink-light hover:text-ink"><X size={20} /></button>
         </div>
         <p className="text-xs text-ink-light mb-4">
-          Simulated only — no real payment is processed. This adds to your in-app trading balance.
+          Transfer money from your Savings Pool to your simulated trading wallet (Demat account) to use for investments.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -233,6 +261,28 @@ function TradeModal({ mode, holdings, walletBalance, onClose, onSaved }) {
   })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [livePrice, setLivePrice] = useState(null)
+  const [fetchingPrice, setFetchingPrice] = useState(false)
+
+  // Debounced live price fetcher for Buy mode
+  useEffect(() => {
+    if (!isBuy || !form.symbol) {
+      setLivePrice(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      setFetchingPrice(true)
+      try {
+        const res = await getLivePrice(form.symbol)
+        setLivePrice(res.data.price)
+      } catch (err) {
+        setLivePrice(null)
+      } finally {
+        setFetchingPrice(false)
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [form.symbol, isBuy])
 
   const selectedHolding = !isBuy ? holdings.find((h) => h.investment_id === Number(form.investment_id)) : null
 
@@ -275,7 +325,7 @@ function TradeModal({ mode, holdings, walletBalance, onClose, onSaved }) {
           <button onClick={onClose} className="text-ink-light hover:text-ink"><X size={20} /></button>
         </div>
         <p className="text-xs text-ink-light mb-4">
-          Simulated trade — no real money or brokerage is involved.
+          Simulated trade â€” no real money or brokerage is involved.
           {isBuy && ` Wallet balance: ${formatCurrency(walletBalance)}`}
         </p>
 
@@ -308,8 +358,13 @@ function TradeModal({ mode, holdings, walletBalance, onClose, onSaved }) {
                   label="Symbol / ticker (optional)"
                   value={form.symbol}
                   onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-                  placeholder="HDFCBANK.BSE"
+                  placeholder="e.g. TCS.NS or RELIANCE.BO"
                 />
+                {form.symbol && (
+                  <p className="text-xs text-ink-light -mt-2">
+                    {fetchingPrice ? 'Fetching live price...' : livePrice ? `Current market price: ${formatCurrency(livePrice)}` : 'Could not fetch live price for this symbol.'}
+                  </p>
+                )}
                 <p className="text-xs text-ink-light -mt-2">
                   Buying more of a symbol you already hold averages into that holding rather than creating a new row.
                 </p>
@@ -435,7 +490,7 @@ export default function Investments() {
           <Card className="p-5">
             <p className="text-xs text-ink-light mb-1">Simulated trading wallet</p>
             <p className="font-display text-xl font-semibold text-ink tabular-nums">{formatCurrency(wallet.cash_balance)}</p>
-            <p className="text-xs text-ink-light mt-1">No real money — used for buying/selling in FinSight.</p>
+            <p className="text-xs text-ink-light mt-1">No real money â€” used for buying/selling in FinSight.</p>
           </Card>
           <Card className="p-5">
             <p className="text-xs text-ink-light mb-1">Savings pool</p>
@@ -525,7 +580,7 @@ export default function Investments() {
                     <td className="px-5 py-3.5 text-right tabular-nums text-ink">{formatCurrency(inv.purchase_price)}</td>
                     <td className="px-5 py-3.5 text-right tabular-nums text-ink">{formatCurrency(inv.invested_value)}</td>
                     <td className="px-5 py-3.5 text-right tabular-nums font-medium text-ink">
-                      {inv.current_value != null ? formatCurrency(inv.current_value) : '—'}
+                      {inv.current_value != null ? formatCurrency(inv.current_value) : 'â€”'}
                     </td>
                     <td className="px-5 py-3.5 text-right tabular-nums">
                       {inv.return_pct != null ? (
@@ -533,7 +588,7 @@ export default function Investments() {
                           {formatPercent(inv.return_pct)}
                         </span>
                       ) : (
-                        <span className="text-ink-light">—</span>
+                        <span className="text-ink-light">â€”</span>
                       )}
                     </td>
                     <td className="px-5 py-3.5 text-ink-light">{inv.purchase_date}</td>

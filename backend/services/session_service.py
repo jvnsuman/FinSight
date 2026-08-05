@@ -53,6 +53,7 @@ def create_session(
         title="New login detected",
         message=f"A new login to your account was detected on {device_info or 'an unknown device'}{location_bit}.",
         type="security",
+        action_url="/profile#sessions",
     )
 
     # Reuses the same reset_token/reset_token_expires fields on User that

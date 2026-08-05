@@ -31,6 +31,7 @@ class AccountResponse(BaseModel):
     account_number: Optional[str] =None
     balance: float
     is_active: bool
+    is_default: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

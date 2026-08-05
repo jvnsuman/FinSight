@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, CheckCheck, Wallet, TrendingUp, Target, Settings } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
 import { Card, ErrorBanner } from '../components/common/Card'
@@ -38,6 +39,7 @@ function formatDate(dateString) {
 const PAGE_SIZE = 30
 
 export default function Notifications() {
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
   const [filter, setFilter] = useState('all')
   const [limit, setLimit] = useState(PAGE_SIZE)
@@ -65,12 +67,19 @@ export default function Notifications() {
   }, [limit, load])
 
   const handleOpenNotification = (notification) => {
-    setSelectedNotification(notification)
     if (!notification.is_read) {
       setNotifications((prev) =>
         prev.map((n) => (n.notification_id === notification.notification_id ? { ...n, is_read: true } : n))
       )
       markNotificationRead(notification.notification_id).catch(() => load(limit))
+    }
+
+    if (notification.action_url) {
+      navigate(notification.action_url)
+    } else {
+      // Nothing to jump to (e.g. a plain system notification) - show the
+      // full message in the detail modal instead of doing nothing.
+      setSelectedNotification(notification)
     }
   }
 

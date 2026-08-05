@@ -246,6 +246,7 @@ def health_check():
 
 from backend.routers import assistant
 from backend.routers import financial_health
+from backend.routers import savings
 
 # ---------------------------------------------------------------
 # Router registration (uncomment as each part is built)
@@ -262,3 +263,4 @@ app.include_router(trading.router)        # Milestone 2, Trading extension - ACT
 app.include_router(notifications.router)  # Milestone 3, Notifications & Alerts - ACTIVE
 app.include_router(assistant.router)      # AI Assistant - ACTIVE
 app.include_router(financial_health.router) # Financial Health Score - ACTIVE
+app.include_router(savings.router)        # Savings Pool breakdown - ACTIVE

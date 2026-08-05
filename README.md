@@ -35,12 +35,12 @@ FinSight is organized into three milestones, each broken into parts:
 | Part | Feature | Status |
 |------|---------|--------|
 | 1 | In-App Notification System | ✅ Active |
-| 2 | Session Management (per-device tracking & revocation) | ✅ Active |
-| 3 | Scheduled Alerts (APScheduler) | ✅ Active |
-| 4 | Account Deactivation & Cleanup | ✅ Active |
-| 5 | Financial Health Score | ✅ Active |
-| 6 | AI Financial Assistant | ✅ Active |
-| 7 | Monthly Report (PDF export) | ✅ Active |
+| 2 | Financial Health Score | ✅ Active |
+| 3 | AI Financial Assistant | ✅ Active |
+| 4 | Monthly Report (PDF export) | ✅ Active |
+| Extra | Session Management (per-device tracking & revocation) | ✅ Active |
+| Extra | Scheduled Alerts (APScheduler) | ✅ Active |
+| Extra | Account Deactivation & Cleanup | ✅ Active |
 
 ---
 

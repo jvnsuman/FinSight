@@ -50,9 +50,9 @@ FinSight is organized into three milestones, each broken into parts:
 - **Accounts, Categories & Transactions** - full CRUD for financial accounts, custom categories, and transaction logging
 - **Bank Statement Import** - upload a CSV/Excel statement, map columns to transaction fields, preview parsed rows (with duplicate & error detection), then commit confirmed rows as real transactions
 - **Monthly Report** - a dedicated report page that pages through a user's full transaction history (not just the most recent page) to compute accurate month-over-month figures, exportable as a PDF with a custom SVG chart legend
-- **Savings Pool** - a running balance that auto-refills once a month with the *previous* month's net savings (income minus expenses) plus a sweep of any loose wallet cash; a breakdown popup shows exactly what was added and which month it came from
+- **Savings Pool** - a running balance that auto-refills once a month with the *previous* month's net savings (income minus expenses) plus a sweep of any loose wallet cash; the dashboard total shown to the user also includes this month's running (not-yet-swept) contribution, while goal draws and overspend checks read the raw stored balance so they can't debit money that isn't really there yet; a breakdown popup shows exactly what was added and which month it came from
 - **Budgets** - set and monitor category-wise budgets with CRUD support
-- **Dashboard** - a consolidated summary view aggregating income, expenses, and account balances
+- **Dashboard** - a consolidated summary view aggregating income, expenses, and account balances, with expense-by-category and investment-allocation breakdowns shown as interactive Recharts donut charts with hover tooltips
 - **Investment Portfolio** - track stocks, mutual funds, ETFs, and bonds with market-data-enriched views
 - **Market Data & Returns** - live price enrichment and return calculations via an external market data service
 - **Financial Goals** - create savings goals, fund them directly, auto-allocate savings, and cover shortfalls

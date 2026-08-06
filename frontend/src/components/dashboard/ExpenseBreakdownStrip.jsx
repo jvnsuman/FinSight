@@ -1,6 +1,7 @@
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card } from '../common/Card'
 
-const STRIP_COLORS = ['#028090', '#02C39A', '#E0574B', '#F4A259', '#7C9885', '#5B7B9A', '#B8A9C9', '#D4A574']
+const SLICE_COLORS = ['#028090', '#02C39A', '#E0574B', '#F4A259', '#7C9885', '#5B7B9A', '#B8A9C9', '#D4A574']
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', {
@@ -8,6 +9,19 @@ function formatCurrency(amount) {
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+function CustomTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const data = payload[0].payload
+  return (
+    <div className="bg-navy text-white text-xs rounded-lg px-3 py-2 shadow-soft">
+      <p className="text-slate-300 font-medium mb-1">{data.category_name}</p>
+      <p style={{ color: payload[0].color }}>
+        {formatCurrency(data.amount)} ({data.percent_of_total}%)
+      </p>
+    </div>
+  )
 }
 
 export default function ExpenseBreakdownStrip({ breakdown }) {
@@ -20,40 +34,37 @@ export default function ExpenseBreakdownStrip({ breakdown }) {
     )
   }
 
-  // Each item's percent_of_total is rounded independently on the backend, so
-  // across several categories the rounded values can sum to just over 100%
-  // (e.g. 33.34 + 33.33 + 33.34 = 100.01). Flexbox doesn't clip overflowing
-  // fixed widths, so the strip would visibly run past its rounded container
-  // - rescale everything down proportionally when that happens, so the
-  // strip's total width always exactly matches its track.
-  const rawTotal = breakdown.reduce((sum, item) => sum + item.percent_of_total, 0)
-  const scale = rawTotal > 100 ? 100 / rawTotal : 1
-
   return (
     <Card className="p-6">
       <h2 className="font-display text-lg font-semibold text-ink mb-4">Where it went</h2>
 
-      {/* The signature strip - proportional segments, one per category */}
-      <div className="flex h-3 rounded-full overflow-hidden mb-5">
-        {breakdown.map((item, i) => (
-          <div
-            key={item.category_id ?? 'uncategorized'}
-            style={{
-              width: `${item.percent_of_total * scale}%`,
-              backgroundColor: STRIP_COLORS[i % STRIP_COLORS.length],
-            }}
-            title={`${item.category_name}: ${item.percent_of_total}%`}
-          />
-        ))}
-      </div>
+      <ResponsiveContainer width="100%" height={220}>
+        <PieChart>
+          <Pie
+            data={breakdown}
+            dataKey="amount"
+            nameKey="category_name"
+            cx="50%"
+            cy="50%"
+            innerRadius={55}
+            outerRadius={80}
+            paddingAngle={3}
+          >
+            {breakdown.map((item, i) => (
+              <Cell key={item.category_id ?? 'uncategorized'} fill={SLICE_COLORS[i % SLICE_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} />
+        </PieChart>
+      </ResponsiveContainer>
 
-      <div className="space-y-3">
+      <div className="space-y-3 mt-2">
         {breakdown.map((item, i) => (
           <div key={item.category_id ?? 'uncategorized'} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2.5">
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: STRIP_COLORS[i % STRIP_COLORS.length] }}
+                style={{ backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length] }}
               />
               <span className="text-ink font-medium">{item.category_name}</span>
             </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Download, TrendingUp, TrendingDown, Sparkles, Search, FileText } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, Sparkles, Search, FileText, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import AppShell from '../components/layout/AppShell';
 import { getAllTransactions } from '../api/transactionsApi';
 
@@ -166,6 +167,65 @@ export default function MonthlyReport() {
     document.body.removeChild(a);
   };
 
+  const handleDownloadExcel = () => {
+    const workbook = XLSX.utils.book_new();
+
+    // --- Sheet 1: Executive Summary (mirrors the PDF's reconciliation table) ---
+    const summaryRows = [
+      ['FinSight - Monthly Statement of Accounts'],
+      [`Billing Period: ${selectedMonth}`],
+      [`Generated On: ${new Date().toLocaleDateString('en-IN')}`],
+      [],
+      ['Particulars', 'Amount (INR)'],
+      [`Opening Balance (as on 1st ${selectedMonth})`, openingBalance],
+      ['Total Receipts / Income Credited', totalIncome],
+      ['Total Payments / Expenses Debited', -totalExpense],
+      ['Tax Deducted at Source (TDS) / Estimated Tax', -totalTDS],
+      ['Closing Balance / Net Available Funds', closingBalance],
+      [],
+      ['Savings Rate', `${savingsRate}%`],
+      ['Income vs. Last Month', `${incomeMoM}%`],
+      ['Expense vs. Last Month', `${expenseMoM}%`],
+      [],
+      ['Key Insight', `${insightPrimary} ${insightSecondary}`.trim()],
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    summarySheet['!cols'] = [{ wch: 42 }, { wch: 20 }];
+    summarySheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } },
+      { s: { r: 15, c: 0 }, e: { r: 15, c: 1 } },
+    ];
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+    // --- Sheet 2: Category-wise Expense Breakdown ---
+    if (expenseByCategory.length > 0) {
+      const categoryRows = [
+        ['Expense Category', 'Amount (INR)', '% of Total Expenses'],
+        ...expenseByCategory.map((cat) => [
+          cat.name,
+          cat.value,
+          totalExpense > 0 ? Number(((cat.value / totalExpense) * 100).toFixed(1)) : 0,
+        ]),
+      ];
+      const categorySheet = XLSX.utils.aoa_to_sheet(categoryRows);
+      categorySheet['!cols'] = [{ wch: 28 }, { wch: 16 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(workbook, categorySheet, 'Category Breakdown');
+    }
+
+    // --- Sheet 3: Full Transaction Ledger ---
+    const ledgerRows = [
+      ['Date', 'Category', 'Type', 'Amount (INR)'],
+      ...filteredData.map((t) => [getRawDate(t), getCategory(t), getRawType(t), parseAmount(t?.amount)]),
+    ];
+    const ledgerSheet = XLSX.utils.aoa_to_sheet(ledgerRows);
+    ledgerSheet['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 12 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(workbook, ledgerSheet, 'Transaction Ledger');
+
+    XLSX.writeFile(workbook, `FinSight_Report_${selectedMonth}.xlsx`);
+  };
+
   return (
     <AppShell>
       <style>
@@ -225,7 +285,11 @@ export default function MonthlyReport() {
             <button onClick={handleDownloadCSV} className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-sm font-medium transition-colors shadow-card">
               <FileText size={16} /> Export CSV
             </button>
-            
+
+            <button onClick={handleDownloadExcel} className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-sm font-medium transition-colors shadow-card">
+              <FileSpreadsheet size={16} /> Export Excel
+            </button>
+
             <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-4 py-2 bg-teal text-white rounded-lg text-sm font-medium hover:bg-teal-dark transition-colors shadow-card">
               <Download size={16} /> Export PDF
             </button>

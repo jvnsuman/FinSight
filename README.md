@@ -96,9 +96,9 @@ FinSight is organized into three milestones, each broken into parts:
 | Tailwind CSS | Styling |
 | lucide-react | Icon set |
 | react-markdown + remark-gfm | Renders the AI Assistant's chat responses as formatted markdown |
-| xlsx (SheetJS) | Builds the multi-sheet Excel workbook for Monthly Report export |
+| xlsx (SheetJS) | Builds the multi-sheet Excel workbook for Monthly Report export - installed from SheetJS's own CDN, not the outdated/vulnerable npm registry version |
 
-> Monthly Report's PDF export uses the browser's native `window.print()` (print-to-PDF), not a dedicated PDF library. Excel export uses the `xlsx` (SheetJS) package - note this package currently has a known high-severity vulnerability with no fix published to the public npm registry (the maintainers only publish patched builds to their own CDN outside npm); `npm audit` will flag it. Worth revisiting before this goes anywhere beyond a portfolio/internship project.
+> Monthly Report's PDF export uses the browser's native `window.print()` (print-to-PDF), not a dedicated PDF library. Excel export uses the `xlsx` (SheetJS) package, installed directly from SheetJS's own CDN (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`) rather than the outdated npm registry version - the npm registry's `xlsx@0.18.5` has a known high-severity vulnerability with no fix published there; the CDN build is the maintainers' own patched release. `npm install` will need to fetch that URL directly, which some npm configurations block by default (`allow-remote` set to `none`) - if so, run `npm config set allow-remote all` first.
 
 **DevOps**
 | Tool | Purpose |

@@ -2,6 +2,7 @@
 Part 1: User Authentication & Profile
 Shared FastAPI dependencies - primarily `get_current_user`, used to protect routes.
 """
+from dataclasses import dataclass
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -93,3 +94,24 @@ def get_current_session_id(token: str = Depends(oauth2_scheme)) -> int | None:
         return None
     session_id = payload.get("sid")
     return int(session_id) if session_id is not None else None
+
+
+@dataclass
+class AuthContext:
+    """
+    Bundles the authenticated user together with the session ID their
+    current request is using. Session-management endpoints (list/revoke
+    devices) need both at once - the user to scope queries to, and the
+    current session ID to mark "this device" in the list and to exclude
+    from "revoke all others". Built on top of get_current_user and
+    get_current_session_id rather than duplicating their logic.
+    """
+    user: User
+    session_id: int | None
+
+
+def get_current_auth(
+    user: User = Depends(get_current_user),
+    session_id: int | None = Depends(get_current_session_id),
+) -> AuthContext:
+    return AuthContext(user=user, session_id=session_id)

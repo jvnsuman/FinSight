@@ -37,7 +37,7 @@ FinSight is organized into three milestones, each broken into parts:
 | 1 | In-App Notification System | ✅ Active |
 | 2 | Financial Health Score | ✅ Active |
 | 3 | AI Financial Assistant | ✅ Active |
-| 4 | Monthly Report (PDF export) | ✅ Active |
+| 4 | Monthly Report (PDF, Excel & CSV export) | ✅ Active |
 | Extra | Session Management (per-device tracking & revocation) | ✅ Active |
 | Extra | Scheduled Alerts (APScheduler) | ✅ Active |
 | Extra | Account Deactivation & Cleanup | ✅ Active |
@@ -49,10 +49,10 @@ FinSight is organized into three milestones, each broken into parts:
 - **Authentication** - registration with email verification, JWT login, forgot/reset password, profile management, password change
 - **Accounts, Categories & Transactions** - full CRUD for financial accounts, custom categories, and transaction logging
 - **Bank Statement Import** - upload a CSV/Excel statement, map columns to transaction fields, preview parsed rows (with duplicate & error detection), then commit confirmed rows as real transactions
-- **Monthly Report** - a dedicated report page that pages through a user's full transaction history (not just the most recent page) to compute accurate month-over-month figures, exportable as a PDF with a custom SVG chart legend
-- **Savings Pool** - a running balance that auto-refills once a month with the *previous* month's net savings (income minus expenses) plus a sweep of any loose wallet cash; a breakdown popup shows exactly what was added and which month it came from
+- **Monthly Report** - a dedicated report page that pages through a user's full transaction history (not just the most recent page) to compute accurate month-over-month figures, exportable as PDF (via print), CSV, or a multi-sheet Excel workbook (Summary, Category Breakdown, Transaction Ledger)
+- **Savings Pool** - a running balance that auto-refills once a month with the *previous* month's net savings (income minus expenses) plus a sweep of any loose wallet cash; the dashboard total shown to the user also includes this month's running (not-yet-swept) contribution, while goal draws and overspend checks read the raw stored balance so they can't debit money that isn't really there yet; a breakdown popup shows exactly what was added and which month it came from
 - **Budgets** - set and monitor category-wise budgets with CRUD support
-- **Dashboard** - a consolidated summary view aggregating income, expenses, and account balances
+- **Dashboard** - a consolidated summary view aggregating income, expenses, and account balances, with expense-by-category and investment-allocation breakdowns shown as interactive Recharts donut charts with hover tooltips
 - **Investment Portfolio** - track stocks, mutual funds, ETFs, and bonds with market-data-enriched views
 - **Market Data & Returns** - live price enrichment and return calculations via an external market data service
 - **Financial Goals** - create savings goals, fund them directly, auto-allocate savings, and cover shortfalls
@@ -96,8 +96,9 @@ FinSight is organized into three milestones, each broken into parts:
 | Tailwind CSS | Styling |
 | lucide-react | Icon set |
 | react-markdown + remark-gfm | Renders the AI Assistant's chat responses as formatted markdown |
+| xlsx (SheetJS) | Builds the multi-sheet Excel workbook for Monthly Report export |
 
-> Monthly Report's PDF export uses the browser's native `window.print()` (print-to-PDF), not a dedicated PDF library.
+> Monthly Report's PDF export uses the browser's native `window.print()` (print-to-PDF), not a dedicated PDF library. Excel export uses the `xlsx` (SheetJS) package - note this package currently has a known high-severity vulnerability with no fix published to the public npm registry (the maintainers only publish patched builds to their own CDN outside npm); `npm audit` will flag it. Worth revisiting before this goes anywhere beyond a portfolio/internship project.
 
 **DevOps**
 | Tool | Purpose |
@@ -391,6 +392,21 @@ A few root-level scripts document real bugs found and fixed in the savings pool 
 - `backfill_refill_source_month.py` - safe-to-rerun backfill that fills in `last_refill_source_month` for users whose refill ran before that column existed, so the savings breakdown popup labels the source month correctly
 
 None of these run automatically - they're manual tools for one-time data fixes, kept in the repo as a record of the bug and its resolution.
+
+---
+
+## ✅ Testing
+
+`backend/tests/` has a pytest suite covering the security helpers (password hashing, JWT issuing/verification, device parsing) and the savings pool / budget services, run against an in-memory SQLite database - no Postgres setup needed. CI runs it on every push and PR to `main`, alongside the existing lint/compile and frontend build checks.
+
+```bash
+cd backend
+pip install -r requirements.txt
+pip install pytest
+pytest tests -v
+```
+
+Writing these tests surfaced one real issue worth flagging: `backend/models/session.py` and `backend/models/user_session.py` both define a class named `UserSession` mapped to the same `user_sessions` table. Only `user_session.py` is actually imported anywhere (`session_service.py`); `models/session.py` is dead code and should be deleted - importing both in the same process causes a SQLAlchemy mapper conflict, which is how this was caught.
 
 ---
 

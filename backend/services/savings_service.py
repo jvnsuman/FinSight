@@ -90,8 +90,30 @@ def ensure_monthly_refill(db: Session, user_id: int) -> User:
 
 
 def get_savings_pool(db: Session, user_id: int) -> Decimal:
+    """
+    Returns the pool total to DISPLAY to the user - the real stored
+    savings_pool PLUS this calendar month's running contribution (income
+    minus expenses so far), since that money is genuinely theirs to count as
+    savings even though it hasn't been formally swept into the stored ledger
+    yet (that sweep only happens once, at next month's refill).
+
+    This is deliberately different from the stored User.savings_pool column,
+    which other code (goal draws, the overspend shortfall check in
+    transaction_service) should keep reading directly when it needs the real
+    ledger balance that can actually be debited - not this display total,
+    which includes money that's still just sitting in the wallet/accounts
+    rather than in the pool itself.
+    """
     user = ensure_monthly_refill(db, user_id)
-    return user.savings_pool
+
+    from backend.services.dashboard_service import _get_summary_cards, _month_bounds
+
+    current_month = date.today().replace(day=1)
+    first_day, last_day = _month_bounds(current_month)
+    summary = _get_summary_cards(db, user_id, first_day, last_day)
+    this_month_contribution = max(Decimal(str(summary["total_savings"])), Decimal("0"))
+
+    return Decimal(user.savings_pool) + this_month_contribution
 
 
 def get_savings_breakdown(db: Session, user_id: int) -> dict:
@@ -126,8 +148,15 @@ def get_savings_breakdown(db: Session, user_id: int) -> dict:
     ]
     total_allocated_to_goals = sum((Decimal(str(g["current_amount"])) for g in goal_allocations), Decimal("0"))
 
+    # Same total shown on the dashboard's Savings Pool card - the stored
+    # pool balance PLUS this month's running contribution, not just the
+    # stored balance alone. Without this, the popup's "Total in pool" figure
+    # at the top wouldn't match the sum of its own breakdown rows below it
+    # (pool + this month's contribution + pending wallet cash).
+    displayed_total = Decimal(user.savings_pool) + this_month_contribution
+
     return {
-        "savings_pool": float(user.savings_pool),
+        "savings_pool": float(displayed_total),
         "this_month_contribution": float(this_month_contribution),
         "wallet_cash_pending_sweep": float(user.cash_balance),
         "total_allocated_to_goals": float(total_allocated_to_goals),

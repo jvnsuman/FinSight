@@ -84,124 +84,6 @@ from backend.models import notification as notification_model  # noqa: F401
 from backend.models import user_session as user_session_model  # noqa: F401
 from backend.routers import notifications
 
-
-app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
-
-# Allow the React frontend (localhost:5173 for Vite, 3000 for CRA) to call this API
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.on_event("startup")
-def on_startup():
-    # NOTE: Base.metadata.create_all() used to run here. Removed - it was
-    # silently creating tables outside of Alembic's migration history,
-    # which masked the fact that the very first migration (a18d06e7e499)
-    # didn't actually create the base tables. Run `alembic upgrade head`
-    # before starting the app; see CONTRIBUTING.md.
-    pass
-
-
-@app.get("/")
-def root():
-    return {"message": "FinSight API is running"}
-
-"""
-FinSight - Main Application Entrypoint
-========================================
-This is the parent file. As we build each of the 4 Milestone 1 parts,
-we will import and register their routers here:
-
-  Part 1 - Authentication & Profile   -> backend.routers.auth
-  Part 2 - Expense & Transactions     -> backend.routers.accounts, backend.routers.transactions
-  Part 3 - Budget Monitoring          -> backend.routers.budgets
-  Part 4 - Dashboard                  -> backend.routers.dashboard
-
-Milestone 2 parts:
-
-  Part 1 - Investment Portfolio Core  -> backend.routers.investments
-  Part 2 - Market Data & Returns      -> (extends investments; Alpha Vantage)
-  Part 3 - Financial Goal Planning    -> backend.routers.goals
-  Part 4 - Portfolio Analytics Dash.  -> backend.routers.portfolio
-
-Run with:
-    uvicorn backend.main:app --reload
-"""
-
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-from backend.config import settings
-from backend.database import Base, engine
-
-# ---------------------------------------------------------------
-# PART 1: Auth models/router - ACTIVE
-# ---------------------------------------------------------------
-from backend.models import user as user_model            # noqa: F401  (ensures table is registered)
-from backend.routers import auth
-
-# ---------------------------------------------------------------
-# PART 2: Accounts, Categories & Transactions - ACTIVE
-# ---------------------------------------------------------------
-from backend.models import account as account_model       # noqa: F401
-from backend.models import category as category_model     # noqa: F401
-from backend.models import transaction as transaction_model  # noqa: F401
-from backend.models import budget as budget_model          # noqa: F401
-from backend.routers import accounts, categories, transactions
-
-# ---------------------------------------------------------------
-# PART 3: Budget Monitoring - ACTIVE
-# ---------------------------------------------------------------
-from backend.routers import budgets
-
-# ---------------------------------------------------------------
-# PART 4: Financial Dashboard - ACTIVE
-# ---------------------------------------------------------------
-from backend.routers import dashboard
-
-# ---------------------------------------------------------------
-# MILESTONE 2 - PART 1: Investment Portfolio Core - ACTIVE
-# ---------------------------------------------------------------
-from backend.models import investment as investment_model  # noqa: F401
-from backend.routers import investments
-
-# ---------------------------------------------------------------
-# MILESTONE 2 - PART 2: Market Data & Returns - ACTIVE
-# (extends the investments router; no separate router of its own)
-# ---------------------------------------------------------------
-from backend.models import price_cache as price_cache_model  # noqa: F401
-
-# ---------------------------------------------------------------
-# MILESTONE 2 - PART 3: Financial Goal Planning - ACTIVE
-# ---------------------------------------------------------------
-from backend.models import goal as goal_model  # noqa: F401
-from backend.routers import goals
-
-# ---------------------------------------------------------------
-# MILESTONE 2 - SIMULATED TRADING EXTENSION - ACTIVE
-# Buy/sell/deposit against an in-app cash wallet; no real money moves.
-# ---------------------------------------------------------------
-from backend.models import trade as trade_model  # noqa: F401
-from backend.routers import trading
-
-# ---------------------------------------------------------------
-# MILESTONE 3 - PART: Notifications & Alerts - ACTIVE
-# ---------------------------------------------------------------
-from backend.models import notification as notification_model  # noqa: F401
-from backend.models import user_session as user_session_model  # noqa: F401
-from backend.routers import notifications
-
 # ---------------------------------------------------------------
 # FINANCIAL HEALTH SCORE MODULE - ACTIVE
 # ---------------------------------------------------------------
@@ -260,6 +142,14 @@ def health_check():
 from backend.routers import assistant
 from backend.routers import financial_health
 from backend.routers import savings
+# NOTE: backend/routers/sessions.py is a duplicate, unused implementation of
+# session management - the real, working one lives at GET/DELETE
+# /auth/sessions inside auth.py (which SessionsCard.jsx on the frontend
+# already calls via authApi.js). routers/sessions.py, schemas/session.py,
+# and frontend/src/api/sessionsApi.js appear to be an abandoned parallel
+# attempt at the same feature and are not imported/used anywhere real.
+# Deliberately not registered here to avoid shipping two competing
+# /sessions and /auth/sessions endpoints for the same feature.
 
 # ---------------------------------------------------------------
 # Router registration (uncomment as each part is built)

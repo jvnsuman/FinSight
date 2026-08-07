@@ -93,6 +93,9 @@ class RegisterResponse(BaseModel):
 class MessageResponse(BaseModel):
     message: str
 
+class VerificationStatusResponse(BaseModel):
+    is_verified: bool
+
 class TokenResponse(BaseModel):
     access_token : str
     token_type : str = "bearer"

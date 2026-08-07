@@ -18,6 +18,10 @@ __pycache__/
 *$py.class
 *.pyc
 
+# Pytest cache (local test-run artifacts, not source)
+.pytest_cache/
+backend/.pytest_cache/
+
 # Distribution / packaging
 build/
 dist/

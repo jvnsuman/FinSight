@@ -17,6 +17,7 @@ from backend.schemas.user import (
     UserResponse,
     RegisterResponse,
     MessageResponse,
+    VerificationStatusResponse,
     TokenResponse,
     UserProfileUpdate,
     ResendVerificationRequest,
@@ -102,6 +103,24 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not send verification email. Please try again shortly.",
         )
+
+
+@router.get("/verification-status", response_model=VerificationStatusResponse)
+def verification_status(email: str, db: Session = Depends(get_db)):
+    """
+    Public, pre-login check of whether an account's email has been
+    verified yet - polled by the "check your inbox" page after signup so
+    it can auto-log the user in the moment they click the emailed link,
+    without them needing to come back and log in manually. Deliberately
+    returns only the boolean (never account existence/other fields) so it
+    can't be used to enumerate registered emails.
+    """
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        # Same response shape as "exists but not verified yet" - don't
+        # reveal whether the email is registered at all.
+        return VerificationStatusResponse(is_verified=False)
+    return VerificationStatusResponse(is_verified=user.is_verified)
 
     return MessageResponse(message="Verification email sent. Please check your inbox.")
 

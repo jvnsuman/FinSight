@@ -25,3 +25,7 @@ class SessionListResponse(BaseModel):
 class RevokeSessionResponse(BaseModel):
     session_id: int
     revoked: bool
+
+
+class RevokeOthersResponse(BaseModel):
+    revoked_count: int

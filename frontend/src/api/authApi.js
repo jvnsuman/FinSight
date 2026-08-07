@@ -6,6 +6,9 @@ export const verifyEmail = (token) => axiosClient.get(`/auth/verify-email?token=
 
 export const resendVerification = (email) => axiosClient.post('/auth/resend-verification', { email })
 
+export const getVerificationStatus = (email) =>
+  axiosClient.get(`/auth/verification-status?email=${encodeURIComponent(email)}`)
+
 export const loginUser = (email, password) => {
   // Backend expects OAuth2PasswordRequestForm - form-encoded, not JSON
   const formData = new URLSearchParams()

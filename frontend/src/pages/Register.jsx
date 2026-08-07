@@ -24,7 +24,10 @@ export default function Register() {
       if (form.phone) payload.phone = form.phone
       const res = await registerUser(payload)
       setSuccess(res.data.message)
-      setTimeout(() => navigate('/login'), 2500)
+      setTimeout(
+        () => navigate('/verify-pending', { state: { email: form.email, password: form.password } }),
+        1200
+      )
     } catch (err) {
       const detail = err.response?.data?.detail
       if (Array.isArray(detail)) {

@@ -184,6 +184,16 @@ export default function NotificationBell() {
                 </button>
               ))}
           </div>
+
+          <button
+            onClick={() => {
+              setIsOpen(false)
+              navigate('/notifications')
+            }}
+            className="w-full text-center px-4 py-2.5 text-xs font-medium text-teal hover:text-teal-light border-t border-slate-100 transition-colors"
+          >
+            View all notifications
+          </button>
         </div>
       )}
 

@@ -394,6 +394,21 @@ None of these run automatically - they're manual tools for one-time data fixes, 
 
 ---
 
+## ✅ Testing
+
+`backend/tests/` has a pytest suite covering the security helpers (password hashing, JWT issuing/verification, device parsing) and the savings pool / budget services, run against an in-memory SQLite database - no Postgres setup needed. CI runs it on every push and PR to `main`, alongside the existing lint/compile and frontend build checks.
+
+```bash
+cd backend
+pip install -r requirements.txt
+pip install pytest
+pytest tests -v
+```
+
+Writing these tests surfaced one real issue worth flagging: `backend/models/session.py` and `backend/models/user_session.py` both define a class named `UserSession` mapped to the same `user_sessions` table. Only `user_session.py` is actually imported anywhere (`session_service.py`); `models/session.py` is dead code and should be deleted - importing both in the same process causes a SQLAlchemy mapper conflict, which is how this was caught.
+
+---
+
 ## 🔐 Security Notes
 
 - Passwords are hashed with **bcrypt** via `passlib`

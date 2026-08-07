@@ -20,6 +20,8 @@ import LandingPage from './pages/LandingPage'
 
 import Assistant from './pages/Assistant'
 import FinancialHealth from './pages/FinancialHealth'
+import Notifications from './pages/Notifications'
+import VerifyPending from './pages/VerifyPending'
 
 export default function App() {
   return (
@@ -29,6 +31,7 @@ export default function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-pending" element={<VerifyPending />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -45,6 +48,7 @@ export default function App() {
           <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
           <Route path="/financial-health" element={<ProtectedRoute><FinancialHealth /></ProtectedRoute>} />
           <Route path="/monthly-report" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           
           {/* Default routes */}
           <Route path="/" element={<LandingPage />} />

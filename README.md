@@ -49,7 +49,7 @@ FinSight is organized into three milestones, each broken into parts:
 - **Authentication** - registration with email verification, JWT login, forgot/reset password, profile management, password change
 - **Accounts, Categories & Transactions** - full CRUD for financial accounts, custom categories, and transaction logging
 - **Bank Statement Import** - upload a CSV/Excel statement, map columns to transaction fields, preview parsed rows (with duplicate & error detection), then commit confirmed rows as real transactions
-- **Monthly Report** - a dedicated report page that pages through a user's full transaction history (not just the most recent page) to compute accurate month-over-month figures, exportable as PDF (via print), CSV, or a multi-sheet Excel workbook (Summary, Category Breakdown, Transaction Ledger)
+- **Monthly Report** - a dedicated report page that pages through a user's full transaction history (not just the most recent page) to compute accurate month-over-month figures, exportable as PDF (via print), CSV, or an Excel workbook with **real, native, editable Excel charts** (an expenditure-by-category pie chart and a daily income-vs-expense bar chart) - generated server-side, since no browser JS library can write native chart objects
 - **Savings Pool** - a running balance that auto-refills once a month with the *previous* month's net savings (income minus expenses) plus a sweep of any loose wallet cash; the dashboard total shown to the user also includes this month's running (not-yet-swept) contribution, while goal draws and overspend checks read the raw stored balance so they can't debit money that isn't really there yet; a breakdown popup shows exactly what was added and which month it came from
 - **Budgets** - set and monitor category-wise budgets with CRUD support
 - **Landing Page** - a public marketing page at `/` (hero, features, how-it-works, testimonials, FAQ) shown to signed-out visitors before they log in or register
@@ -84,7 +84,7 @@ FinSight is organized into three milestones, each broken into parts:
 | APScheduler | Scheduled background jobs (price-move checks, goal deadlines, monthly summaries, account cleanup) |
 | yfinance | Fetches live stock/fund prices from Yahoo Finance for investment tracking |
 | httpx | Outbound HTTP (misc. API calls) |
-| pandas + openpyxl | Parsing CSV/Excel bank statements for import |
+| pandas + openpyxl | Parsing CSV/Excel bank statements for import, and generating the Monthly Report's Excel workbook (with real native charts) server-side |
 | google-generativeai | Powers the AI Financial Assistant and Financial Health coach chat |
 
 **Frontend**
@@ -98,9 +98,10 @@ FinSight is organized into three milestones, each broken into parts:
 | Tailwind CSS | Styling |
 | lucide-react | Icon set |
 | react-markdown + remark-gfm | Renders the AI Assistant's chat responses as formatted markdown |
-| xlsx (SheetJS) | Builds the multi-sheet Excel workbook for Monthly Report export - installed from SheetJS's own CDN, not the outdated/vulnerable npm registry version |
 
-> Monthly Report's PDF export uses the browser's native `window.print()` (print-to-PDF), not a dedicated PDF library. Excel export uses the `xlsx` (SheetJS) package, installed directly from SheetJS's own CDN (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`) rather than the outdated npm registry version - the npm registry's `xlsx@0.18.5` has a known high-severity vulnerability with no fix published there; the CDN build is the maintainers' own patched release. `npm install` will need to fetch that URL directly, which some npm configurations block by default (`allow-remote` set to `none`) - if so, run `npm config set allow-remote all` first.
+> Monthly Report's PDF export uses the browser's native `window.print()` (print-to-PDF), not a dedicated PDF library.
+>
+> Excel export used to run entirely client-side via the `xlsx` (SheetJS) npm package - that package was removed. Neither SheetJS nor ExcelJS (the two mainstream JS libraries) can write real, native Excel chart objects: SheetJS silently strips any existing charts on save, and ExcelJS can't even read a workbook that contains one (both verified directly before switching). So the Excel report is now generated **server-side** instead: `backend/services/report_service.py` loads `backend/templates/monthly_report_template.xlsx` - a template built once with openpyxl, containing a real pie chart and bar chart wired to named ranges on a hidden data sheet - fills in that month's numbers, and streams the result back as a download via `GET /transactions/report/excel`. The charts stay fully native and editable in Excel because openpyxl (unlike the JS libraries) can both read and re-save a workbook's existing chart objects intact.
 
 **DevOps**
 | Tool | Purpose |
@@ -162,7 +163,13 @@ FinSight/
 │   │
 │   ├── secrets/                        # Finvu keys (gitignored)
 │   │
-│   ├── services/                      # Business logic layer, one service per domain
+│   ├── services/                      # Business logic layer, one service per domain, incl.
+│   │                                   #   report_service.py - fills the Excel template below
+│   │                                   #   with real data, preserving its native charts
+│   │
+│   ├── templates/
+│   │   └── monthly_report_template.xlsx  # Built once with openpyxl: a pie chart + bar chart
+│   │                                      #   wired to named ranges on a hidden data sheet
 │   │
 │   ├── tests/                         # pytest suite - see Testing section below
 │   │
@@ -221,6 +228,8 @@ FinSight/
 > - `backend/models/session.py` duplicated `user_session.py` (same table, same class name, never imported anywhere) - deleted.
 >
 > Added `backend/tests/test_app_wiring.py` - integration tests that actually hit every router through FastAPI's `TestClient`, so a router silently failing to register (like the `sessions.py` case) gets caught automatically instead of requiring a manual audit to find.
+
+> **Architecture note - Excel charts:** Monthly Report's Excel export originally built the workbook entirely client-side with the `xlsx` (SheetJS) package. Adding real charts to that export meant testing whether the browser-side approach could support them at all - it can't: SheetJS silently drops any existing chart when it re-saves a workbook, and ExcelJS can't even load a workbook containing one (both confirmed directly, not assumed). So chart generation moved server-side: `backend/services/report_service.py` fills a pre-built openpyxl template's named ranges with real data and streams the `.xlsx` back, and the `xlsx` npm package was removed from the frontend entirely (also shrinking the production bundle by about 300KB gzipped, and removing the earlier `xlsx` vulnerability workaround along with it).
 
 ---
 

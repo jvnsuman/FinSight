@@ -2,10 +2,13 @@
 API routes for managing transactions (income/expense/transfer records).
 """
 
+import io
 import json
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from backend.core.dependencies import get_current_user
@@ -23,6 +26,7 @@ from backend.services.transaction_service import (
     delete_transaction,
 )
 from backend.services.import_service import ImportError_, parse_import_file, commit_import_rows
+from backend.services.report_service import generate_monthly_report_excel
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -68,6 +72,36 @@ def list_transactions(
 # NOTE: both import routes must be declared before "/{transaction_id}" -
 # otherwise FastAPI would try to parse "import" as a transaction_id and
 # 422 on every call.
+@router.get("/report/excel")
+def download_monthly_report_excel(
+    month: date = Query(..., description="Any date within the target month, e.g. 2026-07-15"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Downloads the monthly report as a real .xlsx workbook with native,
+    editable Excel charts (expenditure-by-category pie chart, daily
+    income-vs-expense bar chart) - generated server-side with openpyxl,
+    since no browser-side JS library can write or even preserve native
+    chart objects (verified: both ExcelJS and SheetJS strip them on
+    save). See backend/services/report_service.py for the full reasoning
+    and backend/templates/monthly_report_template.xlsx for the template
+    the charts are wired into via named ranges.
+    """
+    wb = generate_monthly_report_excel(db, current_user.user_id, month)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"FinSight_Report_{month.strftime('%Y-%m')}.xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/import/preview", response_model=ImportPreviewResponse)
 async def preview_import(
     account_id: int = Form(...),

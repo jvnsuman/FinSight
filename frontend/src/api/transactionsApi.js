@@ -35,3 +35,13 @@ export const createTransaction = (data) => axiosClient.post('/transactions', dat
 export const updateTransaction = (transactionId, data) => axiosClient.put(`/transactions/${transactionId}`, data)
 
 export const deleteTransaction = (transactionId) => axiosClient.delete(`/transactions/${transactionId}`)
+
+// Downloads the server-generated Excel report (with real, native pie/bar
+// charts) for the given month. month must be YYYY-MM - the backend
+// accepts any date within the month. Returns the raw blob; the caller is
+// responsible for turning it into a file download (see MonthlyReport.jsx).
+export const downloadMonthlyReportExcel = (month) =>
+  axiosClient.get('/transactions/report/excel', {
+    params: { month: `${month}-01` },
+    responseType: 'blob',
+  })

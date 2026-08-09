@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List
 from pydantic import BaseModel
-import google.generativeai as genai
 import json
 
 from backend.database import get_db
@@ -102,9 +101,10 @@ def ask_health_coach(
         Base your answer ONLY on the provided metrics and insights.
         """
         
-        model = genai.GenerativeModel("gemini-flash-latest")
-        response = model.generate_content(prompt)
-        
+        response = financial_health_service._client.models.generate_content(
+            model=financial_health_service._GEMINI_MODEL, contents=prompt
+        )
+
         return {"answer": response.text.strip()}
     except Exception as e:
         raise HTTPException(

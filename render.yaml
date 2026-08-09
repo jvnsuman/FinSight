@@ -13,6 +13,16 @@
 # (e.g. `from backend.config import settings`), so the app and Alembic
 # both need to run from the REPO ROOT, not from inside backend/ - hence
 # no rootDir override and the "backend." prefix in build/start commands.
+#
+# Migrations run as part of startCommand ("alembic upgrade head &&
+# uvicorn ..."), not preDeployCommand - preDeployCommand needs a paid
+# plan and is rejected outright on Render's free tier. This means
+# migrations re-run every time the service (re)starts, including the
+# free tier's spin-up-after-sleep - alembic upgrade head is a no-op if
+# already at head, so this is harmless, just slightly slower than
+# strictly necessary on every cold start. The "&&" means a failed
+# migration stops uvicorn from starting at all, rather than booting the
+# app against a schema it doesn't match.
 ####################################################################
 
 services:
@@ -23,8 +33,7 @@ services:
     region: oregon
     branch: main
     buildCommand: pip install -r backend/requirements.txt
-    preDeployCommand: alembic upgrade head
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    startCommand: alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL

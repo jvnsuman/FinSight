@@ -12,7 +12,8 @@ email-validator
 apscheduler
 joserfc
 httpx
+httpx2
 pandas
 openpyxl
-google-generativeai
+google-genai
 yfinance

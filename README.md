@@ -301,7 +301,7 @@ FinSight deploys as two free services on [Render](https://render.com), defined d
 
 ### Every deploy after that
 
-Render redeploys automatically on every push to `main` (`autoDeployTrigger` defaults to `commit`). `preDeployCommand: alembic upgrade head` runs your migrations against Neon before the new backend code goes live, so schema changes ship in the same deploy as the code that needs them.
+Render redeploys automatically on every push to `main` (`autoDeployTrigger` defaults to `commit`). Migrations run as part of the backend's `startCommand` (`alembic upgrade head && uvicorn ...`) rather than `preDeployCommand`, since that option needs a paid plan and is rejected outright on the free tier. This means `alembic upgrade head` runs every time the service starts - including the free tier's spin-up after it sleeps from inactivity - which is harmless (a no-op if already at head) but adds a couple seconds to each cold start. If the migration fails, the `&&` stops `uvicorn` from starting at all, so the app never runs against a schema it doesn't match.
 
 ### Updating a secret later
 

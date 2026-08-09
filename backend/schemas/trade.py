@@ -4,7 +4,7 @@ Pydantic schemas for the simulated trading wallet and buy/sell actions.
 
 from datetime import date, datetime
 from typing import Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 ASSET_TYPE = Literal["stock", "mutual_fund", "etf", "bond", "gold", "cash"]
 
@@ -51,5 +51,4 @@ class TradeResponse(BaseModel):
     # display without a second round-trip.
     new_cash_balance: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

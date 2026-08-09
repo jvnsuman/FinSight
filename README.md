@@ -278,6 +278,37 @@ FinSight/
 
 ---
 
+## ☁️ Deployment
+
+FinSight deploys as two free services on [Render](https://render.com), defined declaratively in `render.yaml` at the repo root - a Blueprint, so both services (and their linked config) are created together instead of clicked through one at a time.
+
+- **`finsight-backend`** - FastAPI, Python native runtime, free web service
+- **`finsight-frontend`** - React/Vite, built and served as a free static site
+- **Database** - stays on Neon (external to Render); `DATABASE_URL` is a secret you paste in once, not something Render manages
+
+**Note on the free tier:** Render's free web services spin down after ~15 minutes of no traffic, so the backend's first request after idling takes 30-50 seconds to wake up. The static frontend has no cold start.
+
+### First-time setup
+
+1. Push this repo to GitHub (already done, if you're reading this here).
+2. In the [Render Dashboard](https://dashboard.render.com), click **New > Blueprint**, connect this repo, and Render reads `render.yaml` automatically.
+3. Render prompts for every secret marked `sync: false` in the Blueprint - fill these in:
+   - `DATABASE_URL` - your Neon connection string
+   - `SMTP_HOST`, `SMTP_SERVER`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` - your email provider's SMTP credentials
+   - `GEMINI_API_KEY` - your Google AI Studio key
+4. Click **Apply**. Render builds and deploys both services. `SECRET_KEY` and `JWT_SECRET_KEY` are generated automatically (`generateValue: true`) - you never see or set these yourself.
+5. `FRONTEND_URL` (used for CORS and email links) and `VITE_API_BASE_URL` (used by the frontend to reach the API) are wired to each other's live URLs automatically via `fromService` - no manual copy-pasting a URL between the two services.
+
+### Every deploy after that
+
+Render redeploys automatically on every push to `main` (`autoDeployTrigger` defaults to `commit`). `preDeployCommand: alembic upgrade head` runs your migrations against Neon before the new backend code goes live, so schema changes ship in the same deploy as the code that needs them.
+
+### Updating a secret later
+
+Blueprint `sync: false` values are only prompted for on the *first* deploy - to change one afterward (e.g. rotating `GEMINI_API_KEY`), edit it directly in the Render Dashboard under that service's **Environment** tab, not by editing `render.yaml`.
+
+---
+
 ## 📥 Importing Bank Statements
 
 1. Go to the **Transactions** page and choose **Import**

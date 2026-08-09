@@ -2,7 +2,7 @@ import json
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-import google.generativeai as genai
+from google import genai
 
 from backend.config import settings
 from backend.models.user import User
@@ -15,17 +15,20 @@ from backend.models.trade import Trade
 
 logger = logging.getLogger(__name__)
 
-# Configure the Gemini API once at module load
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-else:
+_GEMINI_MODEL = "gemini-flash-latest"
+
+# Build the client once at module load, the same way the old SDK's
+# genai.configure() was called once. A missing key still doesn't raise
+# here - handle_query() checks settings.GEMINI_API_KEY itself before ever
+# calling the model, matching the old behavior.
+_client = genai.Client(api_key=settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None
+if not settings.GEMINI_API_KEY:
     logger.warning("GEMINI_API_KEY is not set. Assistant will fail on use.")
 
 def _detect_intent(query: str) -> str:
     """
     Detects whether the query is related to personal finance or general knowledge.
     """
-    model = genai.GenerativeModel("gemini-flash-latest")
     prompt = (
         "Classify the following user query into exactly one of two categories: 'personal' or 'general'.\n"
         "- 'personal': The user is asking about their own financial data, spending, budget, portfolio, accounts, transactions, investments, or asking to analyze their data.\n"
@@ -33,7 +36,7 @@ def _detect_intent(query: str) -> str:
         "Return strictly the word 'personal' or 'general' and nothing else.\n\n"
         f"Query: {query}"
     )
-    response = model.generate_content(prompt)
+    response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
     classification = response.text.strip().lower()
     if "personal" in classification:
         return "personal"
@@ -61,10 +64,9 @@ def _handle_general_query(query: str) -> str:
     """
     Handles general knowledge queries using Gemini flash without personal data context.
     """
-    model = genai.GenerativeModel("gemini-flash-latest")
     prompt = f"You are FinSight's helpful financial assistant. Answer this query in a general context: {query}"
-    
-    response = model.generate_content(prompt)
+
+    response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
     return response.text
 
 def _handle_personal_query(db: Session, user: User, query: str) -> str:
@@ -192,7 +194,6 @@ def _handle_personal_query(db: Session, user: User, query: str) -> str:
     prompt = f"{system_instruction}\n\nContext Data:\n```json\n{context_json}\n```\n\nUser Query: {query}"
     
     # 4. Generate response using the fast flash model
-    model = genai.GenerativeModel("gemini-flash-latest")
-    response = model.generate_content(prompt)
-    
+    response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
+
     return response.text

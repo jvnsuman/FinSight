@@ -1,9 +1,11 @@
 ####################################################################
 # Render Blueprint for FinSight.
 #
-# Two services, both on Render's free tier:
-#   - finsight-backend  (FastAPI, Python native runtime)
-#   - finsight-frontend (React/Vite, static site)
+# Two services:
+#   - finsight-backend  (FastAPI, Python native runtime, plan: free)
+#   - finsight-frontend (React/Vite, static site - static sites have no
+#     "plan" field at all on Render; they're free by nature, so setting
+#     plan: free on one is rejected as an unknown field, not a no-op)
 #
 # The database (Neon Postgres) is NOT defined here - it's external,
 # so DATABASE_URL is a sync:false secret you paste in once during the
@@ -87,7 +89,6 @@ services:
   - type: web
     runtime: static
     name: finsight-frontend
-    plan: free
     branch: main
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist

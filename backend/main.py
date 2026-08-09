@@ -89,7 +89,34 @@ from backend.routers import notifications
 # ---------------------------------------------------------------
 from backend.models import financial_health as financial_health_model  # noqa: F401
 
-app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
+from contextlib import asynccontextmanager
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from backend.database import SessionLocal
+from backend.services.market_data_service import refresh_all_active_symbols
+
+scheduler = BackgroundScheduler()
+
+
+def _refresh_market_data_job():
+    db = SessionLocal()
+    try:
+        refresh_all_active_symbols(db)
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: same behavior as the old @app.on_event("startup") handler
+    scheduler.add_job(_refresh_market_data_job, "interval", minutes=60)
+    scheduler.start()
+    yield
+    # Shutdown: same behavior as the old @app.on_event("shutdown") handler
+    scheduler.shutdown()
+
+
+app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG, lifespan=lifespan)
 
 # Allow the React frontend (localhost:5173 for Vite, 3000 for CRA) to call this API
 app.add_middleware(
@@ -104,29 +131,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-from apscheduler.schedulers.background import BackgroundScheduler
-from backend.database import SessionLocal
-from backend.services.market_data_service import refresh_all_active_symbols
-
-scheduler = BackgroundScheduler()
-
-@app.on_event("startup")
-def on_startup():
-    def refresh_market_data_job():
-        db = SessionLocal()
-        try:
-            refresh_all_active_symbols(db)
-        finally:
-            db.close()
-            
-    scheduler.add_job(refresh_market_data_job, 'interval', minutes=60)
-    scheduler.start()
-    
-@app.on_event("shutdown")
-def on_shutdown():
-    scheduler.shutdown()
 
 
 @app.get("/")

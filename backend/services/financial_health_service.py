@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-import google.generativeai as genai
+from google import genai
 
 from backend.config import settings
 from backend.models.financial_health import FinancialHealthCache
@@ -15,11 +15,16 @@ from backend.models.account import Account
 from backend.models.goal import Goal
 from backend.models.investment import Investment
 
-# Ensure API Key is set
+_GEMINI_MODEL = "gemini-flash-latest"
+
+# Built once at module load, same as the old genai.configure() call. Left
+# as None on any failure (e.g. missing key) - callers already wrap their
+# generate_content call in try/except and fall back to a default response,
+# so a None client surfaces the same way a misconfigured old-SDK call did.
 try:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+    _client = genai.Client(api_key=settings.GEMINI_API_KEY)
 except Exception:
-    pass
+    _client = None
 
 DEFAULT_WEIGHTS = {
     "savings_rate": 20,
@@ -247,8 +252,7 @@ def generate_ai_insights(metrics: Dict[str, float], score: int) -> Dict[str, Any
     """
     
     try:
-        model = genai.GenerativeModel("gemini-flash-latest")
-        response = model.generate_content(prompt)
+        response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
         text = response.text.strip()
         if text.startswith("```json"):
             text = text[7:]

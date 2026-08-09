@@ -1,0 +1,97 @@
+####################################################################
+# Render Blueprint for FinSight.
+#
+# Two services, both on Render's free tier:
+#   - finsight-backend  (FastAPI, Python native runtime)
+#   - finsight-frontend (React/Vite, static site)
+#
+# The database (Neon Postgres) is NOT defined here - it's external,
+# so DATABASE_URL is a sync:false secret you paste in once during the
+# first Blueprint deploy (Render prompts for it in the dashboard).
+#
+# Both imports in backend/main.py use the "backend.xxx" package style
+# (e.g. `from backend.config import settings`), so the app and Alembic
+# both need to run from the REPO ROOT, not from inside backend/ - hence
+# no rootDir override and the "backend." prefix in build/start commands.
+####################################################################
+
+services:
+  - type: web
+    runtime: python
+    name: finsight-backend
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r backend/requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste your Neon connection string here on first deploy
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES
+        value: 60
+      - key: PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_SERVER
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: FinSight
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: APP_NAME
+        value: FinSight
+      - key: DEBUG
+        value: "false"
+      - key: FRONTEND_URL
+        fromService:
+          name: finsight-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: MARKET_DATA_CACHE_TTL_MINUTES
+        value: 15
+      - key: FINVU_PRIVATE_KEY_PATH
+        value: backend/secrets/finvu_private_key.pem
+      - key: FINVU_PUBLIC_JWK_PATH
+        value: backend/secrets/finvu_public_key.jwk.json
+
+  - type: web
+    runtime: static
+    name: finsight-frontend
+    plan: free
+    branch: main
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          name: finsight-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+    routes:
+      # Client-side routing (React Router) - any path Render doesn't
+      # find a matching static file for should fall back to index.html
+      # so the app's own router can handle it, instead of a 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html

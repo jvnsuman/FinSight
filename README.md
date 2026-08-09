@@ -85,7 +85,7 @@ FinSight is organized into three milestones, each broken into parts:
 | yfinance | Fetches live stock/fund prices from Yahoo Finance for investment tracking |
 | httpx | Outbound HTTP (misc. API calls) |
 | pandas + openpyxl | Parsing CSV/Excel bank statements for import, and generating the Monthly Report's Excel workbook (with real native charts) server-side |
-| google-generativeai | Powers the AI Financial Assistant and Financial Health coach chat |
+| google-genai | Powers the AI Financial Assistant and Financial Health coach chat - migrated from `google-generativeai`, which Google fully sunset |
 
 **Frontend**
 | Tool | Purpose |

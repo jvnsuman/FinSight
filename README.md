@@ -131,7 +131,8 @@ FinSight/
 │
 ├── backend/
 │   ├── main.py                        # FastAPI entrypoint, router registration, scheduler startup
-│   ├── config.py                      # App/DB/email settings (gitignored - contains secrets)
+│   ├── config.py                      # App/DB/email settings - committed; a pydantic-settings
+│   │                                   #   class with safe defaults, real values come from .env
 │   ├── database.py                    # SQLAlchemy engine/session setup
 │   ├── requirements.txt
 │   │
@@ -249,7 +250,7 @@ FinSight/
    pip install -r requirements.txt
    ```
 
-3. Create your own `backend/config.py` (not included in this repo) with your database URL, JWT secret, and email/SMTP settings.
+3. Copy `backend/.env.example` to `backend/.env` and fill in your database URL, JWT secret, and email/SMTP settings. `backend/config.py` itself is committed (it's a `pydantic-settings` class with safe defaults, not hardcoded secrets) - only your actual values live in the gitignored `.env`.
 
 4. Run database migrations:
    ```bash
@@ -360,7 +361,7 @@ pytest tests -v
 
 - Passwords are hashed with **bcrypt** via `passlib`
 - Authentication uses **JWT** tokens; each token's `jti` is checked against an active `user_sessions` row on every request, so revoking one device immediately invalidates just that token
-- Sensitive files (`backend/config.py`, `.env`, `backend/secrets/`) are excluded from version control via `.gitignore`
+- Sensitive files (`.env`, `backend/secrets/`) are excluded from version control via `.gitignore`. `backend/config.py` is committed - it's a `pydantic-settings` class defining what settings exist and their safe defaults, never actual secret values
 
 ---
 

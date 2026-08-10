@@ -2,6 +2,7 @@
 API routes: register, verify email, resend verification, login, get/update profile.
 """
 
+import logging
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
@@ -45,6 +46,8 @@ from backend.schemas.session import SessionResponse, SessionListResponse, Revoke
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+logger = logging.getLogger(__name__)
+
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
@@ -62,6 +65,11 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     except Exception:
         # Registration already succeeded in the DB; don't fail the request just
         # because the email didn't send - let the user request a resend instead.
+        # Logged with the full traceback (exc_info=True) because this was
+        # previously a bare "except Exception: raise HTTPException(...)" that
+        # discarded the real SMTP error entirely - impossible to tell an auth
+        # failure from a wrong host from a network timeout without this.
+        logger.exception("Failed to send verification email to %s", user.email)
         raise HTTPException(
             status_code=status.HTTP_202_ACCEPTED,
             detail="Account created, but the verification email could not be sent. "
@@ -99,6 +107,7 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
     try:
         send_verification_email(user.email, user.name, user.verification_token)
     except Exception:
+        logger.exception("Failed to resend verification email to %s", user.email)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not send verification email. Please try again shortly.",
@@ -178,6 +187,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
         try:
             send_password_reset_email(user.email, user.name, user.reset_token)
         except Exception:
+            logger.exception("Failed to send password reset email to %s", user.email)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Could not send reset email. Please try again shortly.",

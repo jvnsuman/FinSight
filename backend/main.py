@@ -21,11 +21,22 @@ Run with:
 """
 
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
 from backend.database import Base, engine
+
+# Explicit config rather than relying on the root logger's default level -
+# logger.exception() calls elsewhere (e.g. SMTP failures in routers/auth.py)
+# need at least INFO/ERROR level and a handler that actually writes to
+# stdout, which is what Render's log viewer captures.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 # ---------------------------------------------------------------
 # PART 1: Auth models/router - ACTIVE

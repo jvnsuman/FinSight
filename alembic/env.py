@@ -28,6 +28,24 @@ config = context.config
 
 # Use the same DATABASE_URL the app itself uses, instead of a separate value
 # hardcoded in alembic.ini - keeps migrations pointed at the real DB.
+
+# TEMPORARY DIAGNOSTIC - remove once the Render env var issue is confirmed
+# and fixed. Prints where DATABASE_URL is actually resolving to (with the
+# password masked) and whether an unexpected .env file is present, so we
+# can tell definitively whether the env var is reaching this process.
+import os
+_masked = settings.DATABASE_URL
+if "@" in _masked:
+    _scheme_and_user, _rest = _masked.split("@", 1)
+    if ":" in _scheme_and_user.split("//", 1)[-1]:
+        _scheme, _cred = _scheme_and_user.split("//", 1)
+        _user = _cred.split(":", 1)[0]
+        _masked = f"{_scheme}//{_user}:***@{_rest}"
+print(f"[DIAGNOSTIC] settings.DATABASE_URL resolves to: {_masked}", flush=True)
+print(f"[DIAGNOSTIC] os.environ has DATABASE_URL set: {'DATABASE_URL' in os.environ}", flush=True)
+print(f"[DIAGNOSTIC] cwd: {os.getcwd()}", flush=True)
+print(f"[DIAGNOSTIC] .env exists in cwd: {os.path.exists('.env')}", flush=True)
+
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 # Interpret the config file for Python logging.

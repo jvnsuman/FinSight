@@ -1,5 +1,10 @@
 # Sensitive configuration & secrets
-backend/config.py
+# backend/config.py is intentionally NOT listed here anymore - it's a
+# pydantic-settings class with safe defaults, not a file of real secret
+# values (those come from a local .env or the deploy platform's env vars).
+# It was gitignored for a long time under the assumption it held secrets
+# directly, which meant it was silently missing from every fresh deploy
+# (see the file's own docstring for the incident this caused).
 .env
 .env.*
 !.env.example

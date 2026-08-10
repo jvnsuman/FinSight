@@ -27,67 +27,6 @@ jobs:
           pip install -r requirements.txt
           pip install flake8
 
-      - name: Create dummy config.py for import checks
-        working-directory: backend
-        run: |
-          cat > config.py << 'EOF'
-          import os
-
-          DATABASE_URL = "postgresql://ci_user:ci_password@localhost:5432/finsight_ci"
-          SECRET_KEY = "ci-dummy-secret-key"
-          JWT_SECRET_KEY = "ci-dummy-secret-key"
-          ALGORITHM = "HS256"
-          JWT_ALGORITHM = "HS256"
-          ACCESS_TOKEN_EXPIRE_MINUTES = 30
-          EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = 60
-          PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = 30
-
-          SMTP_HOST = "smtp.example.com"
-          SMTP_SERVER = "smtp.example.com"
-          SMTP_PORT = 587
-          SMTP_USERNAME = "ci@example.com"
-          SMTP_PASSWORD = "ci-dummy-password"
-          SMTP_FROM_EMAIL = "ci@example.com"
-          SMTP_FROM_NAME = "FinSight (CI)"
-
-          GEMINI_API_KEY = "ci-dummy-key"
-
-          APP_NAME = "FinSight (test)"
-          DEBUG = False
-          FRONTEND_URL = "http://localhost:5173"
-
-          MARKET_DATA_CACHE_TTL_MINUTES = 15
-
-          FINVU_PRIVATE_KEY_PATH = "backend/secrets/finvu_private_key.pem"
-          FINVU_PUBLIC_JWK_PATH = "backend/secrets/finvu_public_key.jwk.json"
-
-          class Settings:
-              DATABASE_URL = DATABASE_URL
-              SECRET_KEY = SECRET_KEY
-              JWT_SECRET_KEY = JWT_SECRET_KEY
-              ALGORITHM = ALGORITHM
-              JWT_ALGORITHM = JWT_ALGORITHM
-              ACCESS_TOKEN_EXPIRE_MINUTES = ACCESS_TOKEN_EXPIRE_MINUTES
-              EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES
-              PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
-              SMTP_HOST = SMTP_HOST
-              SMTP_SERVER = SMTP_SERVER
-              SMTP_PORT = SMTP_PORT
-              SMTP_USERNAME = SMTP_USERNAME
-              SMTP_PASSWORD = SMTP_PASSWORD
-              SMTP_FROM_EMAIL = SMTP_FROM_EMAIL
-              SMTP_FROM_NAME = SMTP_FROM_NAME
-              GEMINI_API_KEY = GEMINI_API_KEY
-              APP_NAME = APP_NAME
-              DEBUG = DEBUG
-              FRONTEND_URL = FRONTEND_URL
-              MARKET_DATA_CACHE_TTL_MINUTES = MARKET_DATA_CACHE_TTL_MINUTES
-              FINVU_PRIVATE_KEY_PATH = FINVU_PRIVATE_KEY_PATH
-              FINVU_PUBLIC_JWK_PATH = FINVU_PUBLIC_JWK_PATH
-
-          settings = Settings()
-          EOF
-
       - name: Run flake8 (syntax errors & undefined names)
         working-directory: backend
         run: |
@@ -100,6 +39,15 @@ jobs:
 
       - name: Run backend test suite
         working-directory: backend
+        env:
+          # backend/config.py has safe defaults for everything except
+          # these - DATABASE_URL doesn't need to be a real, reachable
+          # database since the test suite runs entirely against an
+          # in-memory SQLite fixture (see tests/conftest.py), never the
+          # value in this env var.
+          DATABASE_URL: "postgresql://ci_user:ci_password@localhost:5432/finsight_ci"
+          JWT_SECRET_KEY: "ci-test-secret-key"
+          GEMINI_API_KEY: "ci-test-key"
         run: |
           pip install pytest
           pytest tests -v

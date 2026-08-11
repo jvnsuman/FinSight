@@ -54,16 +54,11 @@ services:
         value: 60
       - key: PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
         value: 30
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_SERVER
-        sync: false
-      - key: SMTP_PORT
-        value: 587
-      - key: SMTP_USERNAME
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
+      # Email sends via Brevo's HTTP API (Render's free tier blocks all
+      # outbound SMTP ports, so raw smtplib never works there - see
+      # backend/services/email_service.py for the full explanation).
+      - key: BREVO_API_KEY
+        sync: false # paste your Brevo API key here (SMTP & API -> API Keys in Brevo)
       - key: SMTP_FROM_EMAIL
         sync: false
       - key: SMTP_FROM_NAME

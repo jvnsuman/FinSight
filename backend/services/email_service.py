@@ -32,6 +32,17 @@ def _send_via_brevo(to_email: str, subject: str, text_content: str, html_content
     on any failure (non-2xx response, network error, timeout) - callers
     keep the same try/except pattern they had with the old smtplib calls.
     """
+    # TEMPORARY DIAGNOSTIC - confirms this function is actually being
+    # entered/reached, and shows exactly what config it sees, since Brevo's
+    # Email Activity log shows zero attempts at all (not even a rejected
+    # one) - meaning either this function never gets called, or something
+    # in it fails before the httpx.post() call ever fires.
+    print(f"[EMAIL DIAGNOSTIC] _send_via_brevo called for to_email={to_email!r}", flush=True)
+    print(f"[EMAIL DIAGNOSTIC] BREVO_API_KEY set: {bool(settings.BREVO_API_KEY)}, "
+          f"prefix: {settings.BREVO_API_KEY[:10] if settings.BREVO_API_KEY else 'EMPTY'}", flush=True)
+    print(f"[EMAIL DIAGNOSTIC] SMTP_FROM_EMAIL: {settings.SMTP_FROM_EMAIL!r}", flush=True)
+    print(f"[EMAIL DIAGNOSTIC] SMTP_FROM_NAME: {settings.SMTP_FROM_NAME!r}", flush=True)
+
     payload = {
         "sender": {"name": settings.SMTP_FROM_NAME, "email": settings.SMTP_FROM_EMAIL},
         "to": [{"email": to_email}],
@@ -45,8 +56,10 @@ def _send_via_brevo(to_email: str, subject: str, text_content: str, html_content
         "content-type": "application/json",
     }
 
+    print("[EMAIL DIAGNOSTIC] About to call httpx.post to Brevo...", flush=True)
     try:
         response = httpx.post(BREVO_API_URL, json=payload, headers=headers, timeout=15.0)
+        print(f"[EMAIL DIAGNOSTIC] httpx.post returned status: {response.status_code}", flush=True)
         response.raise_for_status()
     except httpx.HTTPStatusError as e:
         logger.error(

@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES: int = 60
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
+    # --- Email (SMTP_* kept for reference; email now sends via Brevo's HTTP
+    # API instead - see backend/services/email_service.py. Render's free
+    # tier blocks outbound SMTP ports entirely, so raw smtplib never works
+    # there regardless of these values being correct.)
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -22,6 +26,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
     SMTP_FROM_NAME: str = "FinSight"
+    BREVO_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     APP_NAME: str = "FinSight"
     DEBUG: bool = False

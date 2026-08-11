@@ -1,16 +1,67 @@
 """
-Email service - send real emails via SMTP (Gmail)
+Email service - sends real emails via Brevo's transactional email HTTP API.
+
+This used to send via smtplib directly to Gmail's SMTP server. That broke
+in production: Render's free tier blocks all outbound traffic on SMTP
+ports (25, 465, 587) as of September 2025 - confirmed via Render's own
+changelog - so every smtplib.SMTP(...) connection failed with
+"OSError: [Errno 101] Network is unreachable", regardless of whether the
+Gmail credentials were correct. Brevo's API sends over plain HTTPS
+(port 443, same as any other web request), which isn't blocked, and its
+free tier covers 300 emails/day with no domain verification required to
+get started.
 """
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import logging
+
+import httpx
 
 from backend.config import settings
+
+logger = logging.getLogger(__name__)
+
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+
+
+class EmailSendError(Exception):
+    """Raised when Brevo's API rejects or fails to send an email."""
+
+
+def _send_via_brevo(to_email: str, subject: str, text_content: str, html_content: str) -> None:
+    """
+    Shared send path for every email in this module. Raises EmailSendError
+    on any failure (non-2xx response, network error, timeout) - callers
+    keep the same try/except pattern they had with the old smtplib calls.
+    """
+    payload = {
+        "sender": {"name": settings.SMTP_FROM_NAME, "email": settings.SMTP_FROM_EMAIL},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": text_content,
+        "htmlContent": html_content,
+    }
+    headers = {
+        "accept": "application/json",
+        "api-key": settings.BREVO_API_KEY,
+        "content-type": "application/json",
+    }
+
+    try:
+        response = httpx.post(BREVO_API_URL, json=payload, headers=headers, timeout=15.0)
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        logger.error(
+            "Brevo rejected email to %s: %s %s", to_email, e.response.status_code, e.response.text
+        )
+        raise EmailSendError(f"Brevo API returned {e.response.status_code}") from e
+    except httpx.HTTPError as e:
+        logger.error("Failed to reach Brevo API for email to %s: %s", to_email, e)
+        raise EmailSendError("Could not reach Brevo API") from e
+
 
 def send_verification_email(to_email: str, user_name: str, token: str) -> None:
     """
     Sends an email containing a verification link.
-    Raises smtplib exception on failure.
+    Raises EmailSendError on failure.
     """
     verification_link = f"{settings.FRONTEND_URL}/verify-email?token={token}"
 
@@ -44,23 +95,13 @@ def send_verification_email(to_email: str, user_name: str, token: str) -> None:
       </body>
     </html>
     """
-    
-    message = MIMEMultipart("alternative")
-    message["Subject"] = subject
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
-    message["To"] = to_email
-    message.attach(MIMEText(body_text, "plain"))
-    message.attach(MIMEText(body_html, "html"))
+    _send_via_brevo(to_email, subject, body_text, body_html)
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())
 
-def send_password_reset_email(to_email: str, user_name: str, token: str) ->  None:
+def send_password_reset_email(to_email: str, user_name: str, token: str) -> None:
     """
     Sends an email containing a password reset link.
-    Raised smtplib exception o failure.
+    Raises EmailSendError on failure.
     """
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
@@ -94,18 +135,7 @@ def send_password_reset_email(to_email: str, user_name: str, token: str) ->  Non
       </body>
     </html>
     """
-
-    message = MIMEMultipart("alternative")
-    message["Subject"] = subject
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
-    message["To"] = to_email
-    message.attach(MIMEText(body_text, "plain"))
-    message.attach(MIMEText(body_html, "html"))
-
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())
+    _send_via_brevo(to_email, subject, body_text, body_html)
 
 
 def send_login_alert_email(
@@ -121,9 +151,9 @@ def send_login_alert_email(
     a direct "reset your password" link so the recipient can act immediately
     if this login wasn't them - resetting the password also logs out every
     other device (see reset_password in auth_service).
-    Raises smtplib exception on failure - the caller (session_service) treats
+    Raises EmailSendError on failure - the caller (session_service) treats
     this as non-fatal and swallows it, since the in-app notification is the
-    reliable channel and login shouldn't fail because SMTP hiccuped.
+    reliable channel and login shouldn't fail because email delivery hiccuped.
     """
     device_text = device_info or "an unknown device"
     location_text = f" (IP: {ip_address})" if ip_address else ""
@@ -170,18 +200,7 @@ def send_login_alert_email(
       </body>
     </html>
     """
-
-    message = MIMEMultipart("alternative")
-    message["Subject"] = subject
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
-    message["To"] = to_email
-    message.attach(MIMEText(body_text, "plain"))
-    message.attach(MIMEText(body_html, "html"))
-
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())
+    _send_via_brevo(to_email, subject, body_text, body_html)
 
 
 def send_password_changed_email(to_email: str, user_name: str) -> None:
@@ -195,7 +214,7 @@ def send_password_changed_email(to_email: str, user_name: str) -> None:
     Deliberately doesn't include a reset link here (unlike the login alert):
     if this WASN'T the account owner, the safest next step is contacting
     support, since a same-flow reset link would just let whoever changed it
-    lock the real owner out again. Raises smtplib exception on failure - both
+    lock the real owner out again. Raises EmailSendError on failure - both
     callers treat this as non-fatal and swallow it, same as the other
     account emails in this module.
     """
@@ -222,18 +241,7 @@ def send_password_changed_email(to_email: str, user_name: str) -> None:
       </body>
     </html>
     """
-
-    message = MIMEMultipart("alternative")
-    message["Subject"] = subject
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
-    message["To"] = to_email
-    message.attach(MIMEText(body_text, "plain"))
-    message.attach(MIMEText(body_html, "html"))
-
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())
+    _send_via_brevo(to_email, subject, body_text, body_html)
 
 
 def send_account_deactivated_email(to_email: str, user_name: str, reason: str | None, purge_date) -> None:
@@ -299,15 +307,4 @@ def send_account_deactivated_email(to_email: str, user_name: str, reason: str | 
       </body>
     </html>
     """
-
-    message = MIMEMultipart("alternative")
-    message["Subject"] = subject
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
-    message["To"] = to_email
-    message.attach(MIMEText(body_text, "plain"))
-    message.attach(MIMEText(body_html, "html"))
-
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, message.as_string())
+    _send_via_brevo(to_email, subject, body_text, body_html)

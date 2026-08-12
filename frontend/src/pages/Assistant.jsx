@@ -189,7 +189,7 @@ const Assistant = () => {
                                     handleSend(e);
                                 }
                             }}
-                            placeholder="Message FinSight Assistant..."
+                            placeholder="Message Finance Analytics Assistant..."
                             className="w-full pl-5 pr-14 py-4 bg-transparent border-none focus:outline-none focus:ring-0 resize-none max-h-32 min-h-[56px] text-gray-700"
                             rows={1}
                             disabled={isLoading}

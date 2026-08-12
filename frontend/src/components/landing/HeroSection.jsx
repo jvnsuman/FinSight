@@ -14,7 +14,7 @@ export default function HeroSection() {
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-sm animate-fade-in-up">
             <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
-            <span className="text-xs font-medium text-gray-300">FinSight 2.0 is now live</span>
+            <span className="text-xs font-medium text-gray-300">Finance Analytics Platform 2.0 is now live</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8 leading-tight animate-fade-in-up" style={{ animationDelay: '100ms' }}>

@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
-    SMTP_FROM_NAME: str = "FinSight"
+    SMTP_FROM_NAME: str = "Finance Analytics Platform"
     BREVO_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    APP_NAME: str = "FinSight"
+    APP_NAME: str = "Finance Analytics Platform"
     DEBUG: bool = False
     FRONTEND_URL: str = "http://localhost:5173"
     MARKET_DATA_CACHE_TTL_MINUTES: int = 15

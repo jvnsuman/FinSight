@@ -20,10 +20,10 @@ export default function Sidebar() {
   const { user, logout } = useAuth()
 
   return (
-    <aside className="relative z-20 w-64 shrink-0 bg-navy min-h-screen flex flex-col">
+    <aside className="sticky top-0 z-20 w-64 shrink-0 h-screen bg-navy flex flex-col overflow-y-auto">
       <div className="px-6 py-7 flex items-center justify-between">
-        <span className="font-display text-2xl font-semibold text-white">
-          Fin<span className="text-mint">Sight</span>
+        <span className="font-display text-xl font-semibold text-white leading-tight">
+          Finance Analytics <span className="text-mint">Platform</span>
         </span>
         <NotificationBell />
       </div>

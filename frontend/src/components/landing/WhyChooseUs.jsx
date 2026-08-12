@@ -47,12 +47,12 @@ export default function WhyChooseUs() {
           </div>
 
           <div className="order-1 lg:order-2 space-y-8">
-            <h2 className="text-primary font-bold tracking-wide uppercase text-sm">Why Choose FinSight</h2>
+            <h2 className="text-primary font-bold tracking-wide uppercase text-sm">Why Choose Finance Analytics Platform</h2>
             <h3 className="text-3xl md:text-5xl font-bold text-white leading-tight">
               A smarter way to build wealth
             </h3>
             <p className="text-gray-400 text-lg leading-relaxed">
-              We go beyond simple expense tracking. FinSight acts as your personal CFO, analyzing your data to find opportunities for growth and savings that you might have missed.
+              We go beyond simple expense tracking. Finance Analytics Platform acts as your personal CFO, analyzing your data to find opportunities for growth and savings that you might have missed.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">

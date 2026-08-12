@@ -94,7 +94,7 @@ def download_monthly_report_excel(
     wb.save(buffer)
     buffer.seek(0)
 
-    filename = f"FinSight_Report_{month.strftime('%Y-%m')}.xlsx"
+    filename = f"FinanceAnalyticsPlatform_Report_{month.strftime('%Y-%m')}.xlsx"
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

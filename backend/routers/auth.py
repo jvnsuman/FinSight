@@ -60,9 +60,6 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    print(f"[EMAIL DIAGNOSTIC] register_user succeeded for {user.email!r}, "
-          f"about to call send_verification_email", flush=True)
-
     try:
         send_verification_email(user.email, user.name, user.verification_token)
     except Exception:
@@ -115,6 +112,8 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not send verification email. Please try again shortly.",
         )
+
+    return MessageResponse(message="Verification email sent. Please check your inbox.")
 
 
 @router.get("/verification-status", response_model=VerificationStatusResponse)

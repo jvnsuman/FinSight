@@ -1,5 +1,5 @@
 """
-FinSight - Main Application Entrypoint
+Finance Analytics Platform - Main Application Entrypoint
 ========================================
 This is the parent file. As we build each of the 4 Milestone 1 parts,
 we will import and register their routers here:
@@ -152,7 +152,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "FinSight API is running"}
+    return {"message": "Finance Analytics Platform API is running"}
 
 
 @app.get("/health")

@@ -64,7 +64,7 @@ def _handle_general_query(query: str) -> str:
     """
     Handles general knowledge queries using Gemini flash without personal data context.
     """
-    prompt = f"You are FinSight's helpful financial assistant. Answer this query in a general context: {query}"
+    prompt = f"You are Finance Analytics Platform's helpful financial assistant. Answer this query in a general context: {query}"
 
     response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
     return response.text
@@ -179,7 +179,7 @@ def _handle_personal_query(db: Session, user: User, query: str) -> str:
 
     # 3. Construct the strict prompt
     system_instruction = (
-        "You are FinSight's secure AI financial assistant. You are provided with a specific user's "
+        "You are Finance Analytics Platform's secure AI financial assistant. You are provided with a specific user's "
         "accurate, real-time financial data as JSON context (accounts, transactions, budgets, goals, investments, trades). "
         "Your task is to answer the user's query based STRICTLY on this provided context. "
         "Do NOT invent, guess, or use dummy values. If the answer cannot be derived from the provided context, "

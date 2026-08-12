@@ -1,16 +1,16 @@
-# FinSight 💰📊
+# Finance Analytics Platform 💰📊
 
 > ⚠️ **All Rights Reserved**
 > This repository is for portfolio and showcase purposes only.
 > Do not copy, reuse, or redistribute without explicit permission from the author.
 
-**FinSight** is a full-stack personal finance and investment intelligence platform, built as part of the **Infosys Springboard Virtual Internship**. It combines expense tracking, budget monitoring, financial goal planning, a simulated investment/trading portfolio, in-app notifications with scheduled alerts, a financial health score, an AI assistant, and monthly reporting into a single web app with a FastAPI backend and a React (Vite) frontend.
+**Finance Analytics Platform** is a full-stack personal finance and investment intelligence platform, built as part of the **Infosys Springboard Virtual Internship**. It combines expense tracking, budget monitoring, financial goal planning, a simulated investment/trading portfolio, in-app notifications with scheduled alerts, a financial health score, an AI assistant, and monthly reporting into a single web app with a FastAPI backend and a React (Vite) frontend.
 
 ---
 
 ## 📌 Project Overview
 
-FinSight is organized into three milestones, each broken into parts:
+Finance Analytics Platform is organized into three milestones, each broken into parts:
 
 **Milestone 1 - Core Personal Finance**
 | Part | Feature | Status |
@@ -113,7 +113,7 @@ FinSight is organized into three milestones, each broken into parts:
 ## 📂 Project Structure
 
 ```
-FinSight/
+FinanceAnalyticsPlatform/
 ├── LICENSE
 ├── README.md
 ├── .gitignore
@@ -240,8 +240,8 @@ FinSight/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jvnsuman/FinSight.git
-   cd FinSight
+   git clone https://github.com/jvnsuman/FinanceAnalyticsPlatform.git
+   cd FinanceAnalyticsPlatform
    ```
 
 2. Install backend dependencies:
@@ -281,7 +281,7 @@ FinSight/
 
 ## ☁️ Deployment
 
-FinSight deploys as two free services on [Render](https://render.com), defined declaratively in `render.yaml` at the repo root - a Blueprint, so both services (and their linked config) are created together instead of clicked through one at a time.
+Finance Analytics Platform deploys as two free services on [Render](https://render.com), defined declaratively in `render.yaml` at the repo root - a Blueprint, so both services (and their linked config) are created together instead of clicked through one at a time.
 
 - **`finsight-backend`** - FastAPI, Python native runtime, free web service
 - **`finsight-frontend`** - React/Vite, built and served as a free static site
@@ -313,7 +313,7 @@ Blueprint `sync: false` values are only prompted for on the *first* deploy - to 
 ## 📥 Importing Bank Statements
 
 1. Go to the **Transactions** page and choose **Import**
-2. Upload a CSV/Excel bank statement and map its columns to FinSight's transaction fields
+2. Upload a CSV/Excel bank statement and map its columns to Finance Analytics Platform's transaction fields
 3. Review the **preview** - parsed rows are shown with any parse errors or likely duplicates flagged
 4. Edit any rows if needed, then **commit** - only then are transactions actually created
 

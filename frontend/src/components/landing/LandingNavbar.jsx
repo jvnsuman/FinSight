@@ -40,7 +40,7 @@ export default function LandingNavbar() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <TrendingUp className="text-white w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold text-white tracking-tight">FinSight</span>
+              <span className="text-2xl font-bold text-white tracking-tight">Finance Analytics Platform</span>
             </a>
           </div>
 

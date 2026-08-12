@@ -6,7 +6,7 @@ export default function AboutSection() {
     {
       icon: <Target className="w-8 h-8 text-primary" />,
       title: "Goal-Oriented",
-      description: "We believe financial success starts with clear goals. FinSight helps you define, track, and reach your targets faster."
+      description: "We believe financial success starts with clear goals. Finance Analytics Platform helps you define, track, and reach your targets faster."
     },
     {
       icon: <Lightbulb className="w-8 h-8 text-accent" />,
@@ -29,7 +29,7 @@ export default function AboutSection() {
           
           {/* Text Content */}
           <div className="space-y-8">
-            <h2 className="text-sm font-bold tracking-widest text-primary uppercase">About FinSight</h2>
+            <h2 className="text-sm font-bold tracking-widest text-primary uppercase">About Finance Analytics Platform</h2>
             <h3 className="text-3xl md:text-4xl font-bold text-white leading-tight">
               Empowering you to make smarter financial decisions.
             </h3>
@@ -37,7 +37,7 @@ export default function AboutSection() {
               In today's fast-paced world, managing personal finances can feel overwhelming. Spreadsheets are tedious, and generic budgeting apps lack the intelligence to adapt to your unique situation. 
             </p>
             <p className="text-gray-400 text-lg leading-relaxed">
-              That's why we built FinSight. We combine powerful analytics, intuitive design, and artificial intelligence to give you a complete, crystal-clear picture of your financial health.
+              That's why we built Finance Analytics Platform. We combine powerful analytics, intuitive design, and artificial intelligence to give you a complete, crystal-clear picture of your financial health.
             </p>
             
             <div className="pt-4 flex items-center space-x-4">

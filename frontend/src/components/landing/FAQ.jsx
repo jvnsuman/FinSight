@@ -7,11 +7,11 @@ export default function FAQ() {
   const faqs = [
     {
       q: "How secure is my financial data?",
-      a: "FinSight uses bank-grade AES-256 encryption. We never sell your data to third parties, and our platform undergoes regular security audits to ensure your information remains strictly private."
+      a: "Finance Analytics Platform uses bank-grade AES-256 encryption. We never sell your data to third parties, and our platform undergoes regular security audits to ensure your information remains strictly private."
     },
     {
       q: "Can I track both investments and daily expenses?",
-      a: "Yes! FinSight is an all-in-one platform. You can log daily cash flows, set strict budgets, and track live market prices for your stock and mutual fund portfolios simultaneously."
+      a: "Yes! Finance Analytics Platform is an all-in-one platform. You can log daily cash flows, set strict budgets, and track live market prices for your stock and mutual fund portfolios simultaneously."
     },
     {
       q: "How do the AI recommendations work?",
@@ -23,7 +23,7 @@ export default function FAQ() {
     },
     {
       q: "Is there a mobile app available?",
-      a: "FinSight is built as a fully responsive progressive web app (PWA). It works flawlessly on desktop, tablet, and mobile browsers, feeling just like a native app."
+      a: "Finance Analytics Platform is built as a fully responsive progressive web app (PWA). It works flawlessly on desktop, tablet, and mobile browsers, feeling just like a native app."
     }
   ];
 

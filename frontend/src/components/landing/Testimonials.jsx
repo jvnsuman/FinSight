@@ -6,7 +6,7 @@ export default function Testimonials() {
     {
       name: "Sarah Jenkins",
       role: "Small Business Owner",
-      text: "FinSight completely changed how I look at my money. The AI insights caught a massive leak in my software subscriptions that saved me $400 a month!",
+      text: "Finance Analytics Platform completely changed how I look at my money. The AI insights caught a massive leak in my software subscriptions that saved me $400 a month!",
       avatar: "SJ"
     },
     {

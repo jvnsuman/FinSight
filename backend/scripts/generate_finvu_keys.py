@@ -1,5 +1,5 @@
 """
-Generates the RSA key pair FinSight will use to sign requests to Finvu's
+Generates the RSA key pair Finance Analytics Platform will use to sign requests to Finvu's
 Account Aggregator sandbox (the x-jws-signature header their API requires).
 
     Private key -> backend/secrets/finvu_private_key.pem

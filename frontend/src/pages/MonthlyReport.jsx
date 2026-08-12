@@ -160,7 +160,7 @@ export default function MonthlyReport() {
     const a = document.createElement('a');
     a.setAttribute('hidden', '');
     a.setAttribute('href', url);
-    a.setAttribute('download', `FinSight_Ledger_${selectedMonth}.csv`);
+    a.setAttribute('download', `FinanceAnalyticsPlatform_Ledger_${selectedMonth}.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -185,7 +185,7 @@ export default function MonthlyReport() {
       const a = document.createElement('a');
       a.setAttribute('hidden', '');
       a.setAttribute('href', url);
-      a.setAttribute('download', `FinSight_Report_${selectedMonth}.xlsx`);
+      a.setAttribute('download', `FinanceAnalyticsPlatform_Report_${selectedMonth}.xlsx`);
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -390,10 +390,10 @@ export default function MonthlyReport() {
 
       {/* 2. ENTERPRISE HIDDEN REPORT (PRINT VIEW) */}
       <div id="ca-print-report">
-        <div className="watermark">FINSIGHT ANALYTICS</div>
+        <div className="watermark">FINANCE ANALYTICS PLATFORM</div>
         <div className="corp-header">
           <div>
-            <h1 className="corp-logo">FinSight<span>.</span></h1>
+            <h1 className="corp-logo">Finance Analytics<span>.</span></h1>
             <p className="corp-tagline">Advanced Financial Intelligence & Audit</p>
           </div>
           <div className="corp-meta">
@@ -543,7 +543,7 @@ export default function MonthlyReport() {
 
         <div className="footer-legal">
           <p><strong>CONFIDENTIALITY NOTICE:</strong> This document and any attachments are confidential and may also be privileged. If you are not the intended recipient, please delete all copies and notify the sender immediately.</p>
-          <p style={{ marginTop: '5px' }}>This financial statement is generated automatically by FinSight Analytics systems. While every effort has been made to ensure accuracy, FinSight Analytics accepts no liability for any errors or omissions.</p>
+          <p style={{ marginTop: '5px' }}>This financial statement is generated automatically by the Finance Analytics Platform systems. While every effort has been made to ensure accuracy, Finance Analytics Platform accepts no liability for any errors or omissions.</p>
           <p style={{ marginTop: '10px', textAlign: 'center', fontWeight: 'bold', color: '#cbd5e1' }}>*** END OF SYSTEM GENERATED REPORT ***</p>
         </div>
       </div>

@@ -13,7 +13,7 @@ export default function Footer() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <TrendingUp className="text-white w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold text-white tracking-tight">FinSight</span>
+              <span className="text-2xl font-bold text-white tracking-tight">Finance Analytics Platform</span>
             </div>
             <p className="text-gray-400 max-w-sm leading-relaxed">
               The AI-powered Personal Finance Management Platform that empowers you to track, plan, and grow your wealth with confidence.
@@ -60,7 +60,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} FinSight Technologies Inc. All rights reserved.
+            © {new Date().getFullYear()} Finance Analytics Platform. All rights reserved.
           </p>
           <div className="flex items-center text-gray-500 text-sm">
              <Mail size={16} className="mr-2" /> support@finsight.app

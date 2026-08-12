@@ -14,7 +14,7 @@ export default function CTASection() {
           Take control of your finances today.
         </h2>
         <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
-          Start your journey toward smarter financial decisions, automated insights, and true wealth building with FinSight.
+          Start your journey toward smarter financial decisions, automated insights, and true wealth building with Finance Analytics Platform.
         </p>
         
         <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
@@ -29,7 +29,7 @@ export default function CTASection() {
             to="/login"
             className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white/10 border border-white/20 text-white font-bold text-lg hover:bg-white/20 transition-all flex items-center justify-center backdrop-blur-md"
           >
-            Log In to FinSight
+            Log In to Finance Analytics Platform
           </Link>
         </div>
         

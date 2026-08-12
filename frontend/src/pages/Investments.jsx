@@ -490,7 +490,7 @@ export default function Investments() {
           <Card className="p-5">
             <p className="text-xs text-ink-light mb-1">Simulated trading wallet</p>
             <p className="font-display text-xl font-semibold text-ink tabular-nums">{formatCurrency(wallet.cash_balance)}</p>
-            <p className="text-xs text-ink-light mt-1">No real money â€” used for buying/selling in FinSight.</p>
+            <p className="text-xs text-ink-light mt-1">No real money — used for buying/selling in Finance Analytics Platform.</p>
           </Card>
           <Card className="p-5">
             <p className="text-xs text-ink-light mb-1">Savings pool</p>

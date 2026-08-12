@@ -1,5 +1,11 @@
 ####################################################################
-# Render Blueprint for FinSight.
+# Render Blueprint for Finance Analytics Platform (formerly "FinSight").
+#
+# NOTE: the service names below (finsight-backend, finsight-frontend)
+# are DELIBERATELY left unchanged - renaming them would change the live
+# .onrender.com URLs and break the fromService cross-references between
+# the two services (FRONTEND_URL / VITE_API_BASE_URL). Rename only with
+# a deliberate follow-up step, not as part of a text-only rebrand.
 #
 # Two services:
 #   - finsight-backend  (FastAPI, Python native runtime, plan: free)
@@ -62,11 +68,11 @@ services:
       - key: SMTP_FROM_EMAIL
         sync: false
       - key: SMTP_FROM_NAME
-        value: FinSight
+        value: Finance Analytics Platform
       - key: GEMINI_API_KEY
         sync: false
       - key: APP_NAME
-        value: FinSight
+        value: Finance Analytics Platform
       - key: DEBUG
         value: "false"
       - key: FRONTEND_URL

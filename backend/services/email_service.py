@@ -32,17 +32,6 @@ def _send_via_brevo(to_email: str, subject: str, text_content: str, html_content
     on any failure (non-2xx response, network error, timeout) - callers
     keep the same try/except pattern they had with the old smtplib calls.
     """
-    # TEMPORARY DIAGNOSTIC - confirms this function is actually being
-    # entered/reached, and shows exactly what config it sees, since Brevo's
-    # Email Activity log shows zero attempts at all (not even a rejected
-    # one) - meaning either this function never gets called, or something
-    # in it fails before the httpx.post() call ever fires.
-    print(f"[EMAIL DIAGNOSTIC] _send_via_brevo called for to_email={to_email!r}", flush=True)
-    print(f"[EMAIL DIAGNOSTIC] BREVO_API_KEY set: {bool(settings.BREVO_API_KEY)}, "
-          f"prefix: {settings.BREVO_API_KEY[:10] if settings.BREVO_API_KEY else 'EMPTY'}", flush=True)
-    print(f"[EMAIL DIAGNOSTIC] SMTP_FROM_EMAIL: {settings.SMTP_FROM_EMAIL!r}", flush=True)
-    print(f"[EMAIL DIAGNOSTIC] SMTP_FROM_NAME: {settings.SMTP_FROM_NAME!r}", flush=True)
-
     payload = {
         "sender": {"name": settings.SMTP_FROM_NAME, "email": settings.SMTP_FROM_EMAIL},
         "to": [{"email": to_email}],
@@ -56,10 +45,8 @@ def _send_via_brevo(to_email: str, subject: str, text_content: str, html_content
         "content-type": "application/json",
     }
 
-    print("[EMAIL DIAGNOSTIC] About to call httpx.post to Brevo...", flush=True)
     try:
         response = httpx.post(BREVO_API_URL, json=payload, headers=headers, timeout=15.0)
-        print(f"[EMAIL DIAGNOSTIC] httpx.post returned status: {response.status_code}", flush=True)
         response.raise_for_status()
     except httpx.HTTPStatusError as e:
         logger.error(
@@ -78,10 +65,10 @@ def send_verification_email(to_email: str, user_name: str, token: str) -> None:
     """
     verification_link = f"{settings.FRONTEND_URL}/verify-email?token={token}"
 
-    subject = "Verify your FinSight account"
+    subject = "Verify your Finance Analytics Platform account"
     body_text = (
         f"Hi {user_name},\n\n"
-        f"Thanks for signing up for FinSight. Please verify your email by clicking the link below:\n\n"
+        f"Thanks for signing up for Finance Analytics Platform. Please verify your email by clicking the link below:\n\n"
         f"{verification_link}\n\n"
         f"This link expires in {settings.EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES // 60} hours.\n\n"
         f"If you didn't create this account, you can safely ignore this email."
@@ -89,9 +76,9 @@ def send_verification_email(to_email: str, user_name: str, token: str) -> None:
     body_html = f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #1E293B;">
-        <h2 style="color: #028090;">Verify your FinSight account</h2>
+        <h2 style="color: #028090;">Verify your Finance Analytics Platform account</h2>
         <p>Hi {user_name},</p>
-        <p>Thanks for signing up for FinSight. Please verify your email address to activate your account:</p>
+        <p>Thanks for signing up for Finance Analytics Platform. Please verify your email address to activate your account:</p>
         <p style="margin: 24px 0;">
           <a href="{verification_link}"
              style="background-color:#02C39A; color:#ffffff; padding:12px 24px;
@@ -118,10 +105,10 @@ def send_password_reset_email(to_email: str, user_name: str, token: str) -> None
     """
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
-    subject = "Reset your FinSight password"
+    subject = "Reset your Finance Analytics Platform password"
     body_text = (
         f"Hi {user_name},\n\n"
-        f"We received a request to reset your FinSight password. Click the link below to choose a new one:\n\n"
+        f"We received a request to reset your Finance Analytics Platform password. Click the link below to choose a new one:\n\n"
         f"{reset_link}\n\n"
         f"This link expires in {settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES} minutes.\n\n"
         f"If you didn't request this, you can safely ignore this email - your password will not change."
@@ -129,7 +116,7 @@ def send_password_reset_email(to_email: str, user_name: str, token: str) -> None
     body_html = f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #1E293B;">
-        <h2 style="color: #028090;">Reset your FinSight password</h2>
+        <h2 style="color: #028090;">Reset your Finance Analytics Platform password</h2>
         <p>Hi {user_name},</p>
         <p>We received a request to reset your password. Click the button below to choose a new one:</p>
         <p style="margin: 24px 0;">
@@ -171,21 +158,21 @@ def send_login_alert_email(
     device_text = device_info or "an unknown device"
     location_text = f" (IP: {ip_address})" if ip_address else ""
 
-    subject = "New login to your FinSight account"
+    subject = "New login to your Finance Analytics Platform account"
     body_text = (
         f"Hi {user_name},\n\n"
-        f"We noticed a new login to your FinSight account on {device_text}{location_text}.\n\n"
+        f"We noticed a new login to your Finance Analytics Platform account on {device_text}{location_text}.\n\n"
         f"If this was you, no action is needed.\n\n"
         f"If it wasn't you, please reset your password right away:\n"
         f"{reset_link or ''}\n\n"
         f"Resetting your password will also log you out of every other device, "
         f"and you can review or log out individual sessions any time from your "
-        f"Profile page on FinSight.\n\n"
+        f"Profile page on Finance Analytics Platform.\n\n"
     )
     body_html = f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #1E293B;">
-        <h2 style="color: #028090;">New login to your FinSight account</h2>
+        <h2 style="color: #028090;">New login to your Finance Analytics Platform account</h2>
         <p>Hi {user_name},</p>
         <p>We noticed a new login to your account:</p>
         <p style="background-color:#F7F9F8; border-radius:8px; padding:12px 16px; color:#1E293B;">
@@ -208,7 +195,7 @@ def send_login_alert_email(
         <p style="color:#64748B; font-size:13px;">
           Resetting your password will also log you out of every other device.
           You can also log out this specific device any time from your Profile
-          page on the FinSight app - just open Profile → Active sessions.
+          page on the Finance Analytics Platform app - just open Profile → Active sessions.
         </p>
       </body>
     </html>
@@ -231,10 +218,10 @@ def send_password_changed_email(to_email: str, user_name: str) -> None:
     callers treat this as non-fatal and swallow it, same as the other
     account emails in this module.
     """
-    subject = "Your FinSight password was changed"
+    subject = "Your Finance Analytics Platform password was changed"
     body_text = (
         f"Hi {user_name},\n\n"
-        f"This is a confirmation that the password for your FinSight account was just changed.\n\n"
+        f"This is a confirmation that the password for your Finance Analytics Platform account was just changed.\n\n"
         f"If you made this change, no action is needed.\n\n"
         f"If you didn't change your password, your account may be compromised - "
         f"please contact support right away.\n\n"
@@ -242,14 +229,14 @@ def send_password_changed_email(to_email: str, user_name: str) -> None:
     body_html = f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #1E293B;">
-        <h2 style="color: #028090;">Your FinSight password was changed</h2>
+        <h2 style="color: #028090;">Your Finance Analytics Platform password was changed</h2>
         <p>Hi {user_name},</p>
-        <p>This is a confirmation that the password for your FinSight account was just changed.</p>
+        <p>This is a confirmation that the password for your Finance Analytics Platform account was just changed.</p>
         <p>If you made this change, no action is needed.</p>
         <p style="color:#E0574B;">If you didn't change your password, your account may be compromised - please contact support right away.</p>
         <p style="color:#64748B; font-size:13px;">
           You can review your account's active sessions any time from your
-          Profile page on the FinSight app - just open Profile → Active sessions.
+          Profile page on the Finance Analytics Platform app - just open Profile → Active sessions.
         </p>
       </body>
     </html>
@@ -260,7 +247,7 @@ def send_password_changed_email(to_email: str, user_name: str) -> None:
 def send_account_deactivated_email(to_email: str, user_name: str, reason: str | None, purge_date) -> None:
     """
     Sends a detailed confirmation email when a user deactivates their own
-    FinSight account (auth_service.deactivate_account). Unlike the shorter
+    Finance Analytics Platform account (auth_service.deactivate_account). Unlike the shorter
     security emails in this module, this one is deliberately thorough since
     it's explaining a multi-step, delayed-deletion process the user needs to
     actually understand: what just happened, what's reversible and until
@@ -276,10 +263,10 @@ def send_account_deactivated_email(to_email: str, user_name: str, reason: str | 
     reason_line_text = f"Reason given: {reason}\n\n" if reason else ""
     reason_line_html = f'<p style="color:#64748B;"><em>Reason given: {reason}</em></p>' if reason else ""
 
-    subject = "Your FinSight account has been deactivated"
+    subject = "Your Finance Analytics Platform account has been deactivated"
     body_text = (
         f"Hi {user_name},\n\n"
-        f"We're confirming that your FinSight account was deactivated just now.\n\n"
+        f"We're confirming that your Finance Analytics Platform account was deactivated just now.\n\n"
         f"{reason_line_text}"
         f"What this means right now:\n"
         f"  - You've been logged out of every device, and your account can no longer be used to log in.\n"
@@ -298,9 +285,9 @@ def send_account_deactivated_email(to_email: str, user_name: str, reason: str | 
     body_html = f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #1E293B;">
-        <h2 style="color: #028090;">Your FinSight account has been deactivated</h2>
+        <h2 style="color: #028090;">Your Finance Analytics Platform account has been deactivated</h2>
         <p>Hi {user_name},</p>
-        <p>We're confirming that your FinSight account was deactivated just now.</p>
+        <p>We're confirming that your Finance Analytics Platform account was deactivated just now.</p>
         {reason_line_html}
         <h3 style="color:#0B2E33; font-size:15px;">What this means right now</h3>
         <ul>

@@ -20,7 +20,7 @@ export default function Sidebar() {
   const { user, logout } = useAuth()
 
   return (
-    <aside className="sticky top-0 z-20 w-64 shrink-0 h-screen bg-navy flex flex-col overflow-y-auto">
+    <aside className="sticky top-0 z-20 w-64 shrink-0 h-screen bg-navy flex flex-col">
       <div className="px-6 py-7 flex items-center justify-between">
         <span className="font-display text-xl font-semibold text-white leading-tight">
           Finance Analytics <span className="text-mint">Platform</span>
@@ -28,7 +28,7 @@ export default function Sidebar() {
         <NotificationBell />
       </div>
 
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto min-h-0">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

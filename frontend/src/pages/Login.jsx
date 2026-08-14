@@ -44,7 +44,7 @@ export default function Login() {
         
         <div className="relative z-30 p-12 text-center">
           <span className="font-display text-5xl font-semibold text-white tracking-tight">
-            Fin<span className="text-mint">Sight</span>
+            Finance <span className="text-mint">Analytics</span>
           </span>
           <p className="text-slate-200 text-lg mt-6 max-w-sm mx-auto leading-relaxed">
             Your personal financial command center. Track expenses, monitor portfolios, and plan for your future.
@@ -64,7 +64,7 @@ export default function Login() {
           {/* Mobile Branding */}
           <div className="text-center mb-8 lg:hidden">
             <span className="font-display text-3xl font-semibold text-navy">
-              Fin<span className="text-teal">Sight</span>
+              Finance <span className="text-teal">Analytics</span>
             </span>
           </div>
 

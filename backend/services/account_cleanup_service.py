@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from backend.models.user import User
 
-logger = logging.getLogger("finsight.account_cleanup")
+logger = logging.getLogger("fap.account_cleanup")
 
 DEFAULT_GRACE_PERIOD_DAYS = 30
 

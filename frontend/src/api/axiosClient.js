@@ -11,7 +11,7 @@ const axiosClient = axios.create({
 
 // Attach the JWT to every outgoing request, if we have one
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('finsight_token')
+  const token = localStorage.getItem('fap_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -24,7 +24,7 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('finsight_token')
+      localStorage.removeItem('fap_token')
       if (window.location.pathname !== '/login') {
         window.location.href = '/login'
       }

@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   const loadProfile = useCallback(async () => {
-    const token = localStorage.getItem('finsight_token')
+    const token = localStorage.getItem('fap_token')
     if (!token) {
       setLoading(false)
       return
@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
       const res = await getProfile()
       setUser(res.data)
     } catch {
-      localStorage.removeItem('finsight_token')
+      localStorage.removeItem('fap_token')
       setUser(null)
     } finally {
       setLoading(false)
@@ -29,12 +29,12 @@ export function AuthProvider({ children }) {
   }, [loadProfile])
 
   const login = (token, userData) => {
-    localStorage.setItem('finsight_token', token)
+    localStorage.setItem('fap_token', token)
     setUser(userData)
   }
 
   const logout = () => {
-    localStorage.removeItem('finsight_token')
+    localStorage.removeItem('fap_token')
     setUser(null)
   }
 

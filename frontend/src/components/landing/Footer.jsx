@@ -63,7 +63,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Finance Analytics Platform. All rights reserved.
           </p>
           <div className="flex items-center text-gray-500 text-sm">
-             <Mail size={16} className="mr-2" /> support@finsight.app
+             <Mail size={16} className="mr-2" /> support@financeanalyticsplatform.app
           </div>
         </div>
       </div>

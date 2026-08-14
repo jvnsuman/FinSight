@@ -45,7 +45,7 @@ export default function Register() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <span className="font-display text-3xl font-semibold text-white">
-            Fin<span className="text-mint">Sight</span>
+            Finance <span className="text-mint">Analytics</span>
           </span>
           <p className="text-slate-400 text-sm mt-2">Create your account to get started.</p>
         </div>

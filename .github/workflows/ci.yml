@@ -45,7 +45,7 @@ jobs:
           # database since the test suite runs entirely against an
           # in-memory SQLite fixture (see tests/conftest.py), never the
           # value in this env var.
-          DATABASE_URL: "postgresql://ci_user:ci_password@localhost:5432/finsight_ci"
+          DATABASE_URL: "postgresql://ci_user:ci_password@localhost:5432/fap_ci"
           JWT_SECRET_KEY: "ci-test-secret-key"
           GEMINI_API_KEY: "ci-test-key"
         run: |

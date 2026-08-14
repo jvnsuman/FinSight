@@ -1,24 +1,15 @@
-"""
-App configuration, read from environment variables.
-"""
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/finsight"
-    SECRET_KEY: str = "change-me-in-production"
-    JWT_SECRET_KEY: str = "change-me-in-production"
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/finance_analytics_platform"
+    SECRET_KEY: str = "change-me"
+    JWT_SECRET_KEY: str = "change-me"
     ALGORITHM: str = "HS256"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES: int = 60
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
-    # --- Email (SMTP_* kept for reference; email now sends via Brevo's HTTP
-    # API instead - see backend/services/email_service.py. Render's free
-    # tier blocks outbound SMTP ports entirely, so raw smtplib never works
-    # there regardless of these values being correct.)
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -34,6 +25,5 @@ class Settings(BaseSettings):
     MARKET_DATA_CACHE_TTL_MINUTES: int = 15
     FINVU_PRIVATE_KEY_PATH: str = "backend/secrets/finvu_private_key.pem"
     FINVU_PUBLIC_JWK_PATH: str = "backend/secrets/finvu_public_key.jwk.json"
-
 
 settings = Settings()

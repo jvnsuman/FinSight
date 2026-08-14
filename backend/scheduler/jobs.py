@@ -14,7 +14,7 @@ from backend.database import SessionLocal
 from backend.models.investment import Investment
 from backend.models.user import User
 
-logger = logging.getLogger("finsight.scheduler")
+logger = logging.getLogger("fap.scheduler")
 
 
 def check_investment_price_moves() -> None:

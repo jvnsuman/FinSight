@@ -35,7 +35,7 @@ export default function ResetPassword() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <span className="font-display text-3xl font-semibold text-white">
-            Fin<span className="text-mint">Sight</span>
+            Finance <span className="text-mint">Analytics</span>
           </span>
         </div>
         <div className="bg-white rounded-xl shadow-soft p-8">

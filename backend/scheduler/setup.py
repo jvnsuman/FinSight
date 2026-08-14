@@ -21,7 +21,7 @@ from backend.scheduler.jobs import (
     check_goal_deadlines,
 )
 
-logger = logging.getLogger("finsight.scheduler")
+logger = logging.getLogger("fap.scheduler")
 
 _scheduler: BackgroundScheduler | None = None
 

@@ -64,7 +64,7 @@ def generate(force: bool = False):
     )
     jwk = RSAKey.import_key(public_pem)
     jwk_dict = jwk.as_dict(private=False)  # public parts only (n, e)
-    jwk_dict.update({"alg": "RS256", "use": "sig", "kid": "finsight-finvu-key-1"})
+    jwk_dict.update({"alg": "RS256", "use": "sig", "kid": "fap-finvu-key-1"})
 
     PUBLIC_JWK_PATH.write_text(json.dumps(jwk_dict, indent=2))
 

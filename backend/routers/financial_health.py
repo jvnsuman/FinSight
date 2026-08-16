@@ -101,8 +101,8 @@ def ask_health_coach(
         Base your answer ONLY on the provided metrics and insights.
         """
         
-        response = financial_health_service._client.models.generate_content(
-            model=financial_health_service._GEMINI_MODEL, contents=prompt
+        response = financial_health_service.generate_content_with_retry(
+            financial_health_service._GEMINI_MODEL, prompt
         )
 
         return {"answer": response.text.strip()}

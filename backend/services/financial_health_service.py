@@ -14,8 +14,11 @@ from backend.models.budget import Budget
 from backend.models.account import Account
 from backend.models.goal import Goal
 from backend.models.investment import Investment
+from backend.services.assistant_service import generate_content_with_retry
 
-_GEMINI_MODEL = "gemini-flash-latest"
+_GEMINI_MODEL = "gemini-3.6-flash"
+# Was "gemini-flash-latest" - see assistant_service.py for why that
+# experimental alias was the cause of intermittent 503 errors.
 
 # Built once at module load, same as the old genai.configure() call. Left
 # as None on any failure (e.g. missing key) - callers already wrap their
@@ -252,7 +255,7 @@ def generate_ai_insights(metrics: Dict[str, float], score: int) -> Dict[str, Any
     """
     
     try:
-        response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
+        response = generate_content_with_retry(_GEMINI_MODEL, prompt)
         text = response.text.strip()
         if text.startswith("```json"):
             text = text[7:]

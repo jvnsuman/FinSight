@@ -1,8 +1,10 @@
 import json
 import logging
+import time
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from google import genai
+from google.genai import errors as genai_errors
 
 from backend.config import settings
 from backend.models.user import User
@@ -15,7 +17,13 @@ from backend.models.trade import Trade
 
 logger = logging.getLogger(__name__)
 
-_GEMINI_MODEL = "gemini-flash-latest"
+_GEMINI_MODEL = "gemini-3.6-flash"
+# Was "gemini-flash-latest" - Google documents that alias as EXPERIMENTAL
+# ("typically not suitable for production use... more restrictive rate
+# limits" - ai.google.dev/gemini-api/docs/models), which is the direct
+# cause of the intermittent 503 UNAVAILABLE "high demand" errors users
+# were hitting. gemini-3.6-flash is the current stable, generally
+# available model as of Aug 2026.
 
 # Build the client once at module load, the same way the old SDK's
 # genai.configure() was called once. A missing key still doesn't raise
@@ -24,6 +32,39 @@ _GEMINI_MODEL = "gemini-flash-latest"
 _client = genai.Client(api_key=settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else None
 if not settings.GEMINI_API_KEY:
     logger.warning("GEMINI_API_KEY is not set. Assistant will fail on use.")
+
+
+def generate_content_with_retry(model: str, contents: str, max_retries: int = 2):
+    """
+    Shared wrapper around client.models.generate_content() that retries
+    transient server-side failures (503 - model overloaded, 429 - rate
+    limited) with a short exponential backoff, instead of surfacing them
+    to the user on the first hiccup. Even the stable gemini-3.6-flash
+    model can occasionally return these under real load; a switched-off
+    model name reduces how OFTEN this happens but can't eliminate it.
+
+    Does NOT retry 4xx client errors (bad request, auth failure, etc.) -
+    those won't succeed on retry and should surface immediately. Used by
+    both assistant_service.py and financial_health_service.py, which is
+    why this lives here rather than being duplicated at each call site.
+    """
+    last_error = None
+    for attempt in range(max_retries + 1):
+        try:
+            return _client.models.generate_content(model=model, contents=contents)
+        except genai_errors.ServerError as e:
+            last_error = e
+            if attempt < max_retries:
+                wait_seconds = 2 ** attempt  # 1s, then 2s
+                logger.warning(
+                    "Gemini API returned %s (attempt %d/%d) - retrying in %ds",
+                    getattr(e, "code", "5xx"), attempt + 1, max_retries + 1, wait_seconds,
+                )
+                time.sleep(wait_seconds)
+            else:
+                logger.error("Gemini API still failing after %d attempts: %s", max_retries + 1, e)
+    raise last_error
+
 
 def _detect_intent(query: str) -> str:
     """
@@ -36,7 +77,7 @@ def _detect_intent(query: str) -> str:
         "Return strictly the word 'personal' or 'general' and nothing else.\n\n"
         f"Query: {query}"
     )
-    response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
+    response = generate_content_with_retry(_GEMINI_MODEL, prompt)
     classification = response.text.strip().lower()
     if "personal" in classification:
         return "personal"
@@ -66,7 +107,7 @@ def _handle_general_query(query: str) -> str:
     """
     prompt = f"You are Finance Analytics Platform's helpful financial assistant. Answer this query in a general context: {query}"
 
-    response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
+    response = generate_content_with_retry(_GEMINI_MODEL, prompt)
     return response.text
 
 def _handle_personal_query(db: Session, user: User, query: str) -> str:
@@ -194,6 +235,6 @@ def _handle_personal_query(db: Session, user: User, query: str) -> str:
     prompt = f"{system_instruction}\n\nContext Data:\n```json\n{context_json}\n```\n\nUser Query: {query}"
     
     # 4. Generate response using the fast flash model
-    response = _client.models.generate_content(model=_GEMINI_MODEL, contents=prompt)
+    response = generate_content_with_retry(_GEMINI_MODEL, prompt)
 
     return response.text

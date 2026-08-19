@@ -85,7 +85,7 @@ Finance Analytics Platform is organized into three milestones, each broken into 
 | yfinance | Fetches live stock/fund prices from Yahoo Finance for investment tracking |
 | httpx | Outbound HTTP (misc. API calls) |
 | pandas + openpyxl | Parsing CSV/Excel bank statements for import, and generating the Monthly Report's Excel workbook (with real native charts) server-side |
-| google-genai | Powers the AI Financial Assistant and Financial Health coach chat - migrated from `google-generativeai`, which Google fully sunset |
+| google-genai | Powers the AI Financial Assistant and Financial Health coach chat (model: `gemini-3.6-flash`, a stable GA model - see note below on why not `-latest`) - migrated from `google-generativeai`, which Google fully sunset |
 
 **Frontend**
 | Tool | Purpose |
@@ -232,6 +232,8 @@ FinanceAnalyticsPlatform/
 
 > **Architecture note - Excel charts:** Monthly Report's Excel export originally built the workbook entirely client-side with the `xlsx` (SheetJS) package. Adding real charts to that export meant testing whether the browser-side approach could support them at all - it can't: SheetJS silently drops any existing chart when it re-saves a workbook, and ExcelJS can't even load a workbook containing one (both confirmed directly, not assumed). So chart generation moved server-side: `backend/services/report_service.py` fills a pre-built openpyxl template's named ranges with real data and streams the `.xlsx` back, and the `xlsx` npm package was removed from the frontend entirely (also shrinking the production bundle by about 300KB gzipped, and removing the earlier `xlsx` vulnerability workaround along with it).
 
+> **Reliability fix - Gemini 503s:** Both the AI Assistant and Financial Health coach chat were pinned to `gemini-flash-latest`, which Google's own docs mark as an **experimental alias** ("typically not suitable for production use... more restrictive rate limits") - the direct cause of frequent `503 UNAVAILABLE` "high demand" errors users were hitting. Fixed by switching to `gemini-3.6-flash` (a real, stable, GA model) and adding a shared `generate_content_with_retry()` helper that retries transient 5xx/rate-limit errors with exponential backoff (1s, 2s) before giving up - 4xx client errors still fail immediately, since those won't succeed on retry. Covered by `backend/tests/test_gemini_retry.py`.
+
 ---
 
 ## 🚀 How to Run
@@ -345,6 +347,7 @@ None of these run automatically - they're manual tools for one-time data fixes, 
 - security helpers (password hashing, JWT issuing/verification, device parsing)
 - the savings pool / budget services (in-memory SQLite, no Postgres needed)
 - **app wiring** (`test_app_wiring.py`) - hits every router through FastAPI's `TestClient` to confirm it's actually registered in `main.py`, not just that the file imports without error. This exists because a real bug (a router defined but never registered) slipped past manual review; import succeeding doesn't prove a route is reachable.
+- **Gemini retry/backoff** (`test_gemini_retry.py`) - confirms transient 5xx errors from the AI API are retried with exponential backoff while 4xx client errors fail immediately, and that the model name never silently reverts to the experimental `-latest` alias
 
 CI runs the full suite on every push and PR to `main`, alongside the existing lint/compile and frontend build checks.
 
